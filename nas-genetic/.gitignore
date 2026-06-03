@@ -1,0 +1,46 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# PyTorch Checkpoints and Saved Models
+*.pt
+*.pth
+*.ckpt
+experiments/best_architectures/*.pt
+experiments/best_architectures/*.pth
+
+# Datasets
+data/cifar-10-batches-py/
+data/cifar10_data/
+data/*.tar.gz
+data/raw/
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Misc logs and generated charts to keep repo clean (optional)
+# We will keep the PNGs but ignore huge CSV logs or checkpoint jsons if desired
+# experiments/generation_logs/*.csv
+# experiments/best_architectures/*.json

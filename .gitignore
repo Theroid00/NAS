@@ -1,0 +1,34 @@
+# Datasets
+nas-genetic/data/
+data/
+
+# Model Checkpoints
+nas-genetic/experiments/best_architectures/ckpt_*
+nas-genetic/experiments/best_architectures/*.pt
+nas-genetic/experiments/best_architectures/*.pt.tmp
+*.pt
+*.pth
+
+# Large Archives
+*.zip
+*.tar.gz
+nas-genetic.zip
+
+# Python caches
+**/__pycache__/
+*.py[cod]
+*$py.class
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# Raw console logs
+PS DNAS cd .nas-genetic.txt

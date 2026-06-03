@@ -1,0 +1,42 @@
+{
+  "chromosome": [
+    0,
+    0,
+    2,
+    1,
+    0,
+    0,
+    0,
+    2,
+    0,
+    0,
+    2,
+    1,
+    0
+  ],
+  "arch": {
+    "num_blocks": 2,
+    "filters_1": 32,
+    "filters_2": 256,
+    "filters_3": 256,
+    "filters_4": 256,
+    "filters_5": 512,
+    "kernel_size": 3,
+    "activation": "elu",
+    "dropout": 0.0,
+    "batch_norm": true,
+    "fc_hidden": 512,
+    "pooling": "avg",
+    "use_residual": true
+  },
+  "num_params": 9078474,
+  "best_val_accuracy": 0.5414,
+  "test_accuracy": 0.5334,
+  "history": [
+    {
+      "epoch": 1,
+      "train_acc": 0.4411333333333333,
+      "val_acc": 0.5414
+    }
+  ]
+}

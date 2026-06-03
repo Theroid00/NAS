@@ -1,0 +1,41 @@
+{
+  "run_id": "20260317_195543",
+  "best_chromosome": [
+    2,
+    1,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    2,
+    0,
+    0,
+    0,
+    1
+  ],
+  "best_fitness": 0.6895,
+  "best_arch": {
+    "num_blocks": 4,
+    "filters_1": 64,
+    "filters_2": 64,
+    "filters_3": 128,
+    "filters_4": 256,
+    "filters_5": 1024,
+    "kernel_size": 3,
+    "activation": "relu",
+    "dropout": 0.4,
+    "batch_norm": true,
+    "fc_hidden": 128,
+    "pooling": "max",
+    "use_residual": false
+  },
+  "hyperparams": {
+    "population_size": 10,
+    "n_generations": 5,
+    "proxy_epochs": 5,
+    "crossover_prob": 0.8,
+    "mutation_prob": 0.1
+  }
+}
