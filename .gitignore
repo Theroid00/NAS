@@ -1,11 +1,10 @@
 # Datasets
-nas-genetic/data/
 data/
 
 # Model Checkpoints
-nas-genetic/experiments/best_architectures/ckpt_*
-nas-genetic/experiments/best_architectures/*.pt
-nas-genetic/experiments/best_architectures/*.pt.tmp
+experiments/best_architectures/ckpt_*
+experiments/best_architectures/*.pt
+experiments/best_architectures/*.pt.tmp
 *.pt
 *.pth
 
