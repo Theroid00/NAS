@@ -1,3 +1,7 @@
+# Local Word Reports (Do not push to remote)
+*.docx
+*.doc
+
 # Datasets
 data/
 
