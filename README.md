@@ -1,6 +1,9 @@
 # Neural Architecture Search (NAS) with Genetic Algorithms
 
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+
 > **CSE_5022 — Advanced Machine Learning** | Autonomous Deep Learning Architecture Discovery
+
 
 A full-fledged Neural Architecture Search (NAS) system that uses a **Genetic Algorithm (GA)** to automatically discover optimal Convolutional Neural Network (CNN) architectures for image classification on **CIFAR-10**.
 
@@ -184,3 +187,10 @@ python run_hyper_sweep.py
 - Liu et al. (2019) *DARTS: Differentiable Architecture Search*
 - Real et al. (2019) *Regularized Evolution for Image Classifier Architecture Search* (AmoebaNet)
 - Fortin et al. (2012) *DEAP: Evolutionary Algorithms Made Easy*
+
+---
+
+## 📄 License
+
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+
