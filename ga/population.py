@@ -8,9 +8,9 @@ from typing import List, Tuple
 from ga.chromosome import random_chromosome
 
 
-def init_population(size: int) -> List[List[int]]:
+def init_population(size: int, rng=None) -> List[List[int]]:
     """Create an initial population of `size` random chromosomes."""
-    return [random_chromosome() for _ in range(size)]
+    return [random_chromosome(rng) for _ in range(size)]
 
 
 def get_ranked(

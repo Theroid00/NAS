@@ -17,6 +17,7 @@ def tournament_select(
     population: List[List[int]],
     fitnesses: List[float],
     k: int = 3,
+    rng=None,
 ) -> List[int]:
     """
     Tournament selection: randomly choose k individuals and return the best.
@@ -29,7 +30,8 @@ def tournament_select(
     Returns:
         A single chromosome (winner).
     """
-    contestants = random.choices(range(len(population)), k=k)
+    rng = rng or random
+    contestants = rng.choices(range(len(population)), k=k)
     winner = max(contestants, key=lambda idx: fitnesses[idx])
     return list(population[winner])  # return a copy
 
@@ -39,9 +41,10 @@ def select_parents(
     fitnesses: List[float],
     n: int,
     k: int = 3,
+    rng=None,
 ) -> List[List[int]]:
     """Select `n` parents via repeated tournament selection."""
-    return [tournament_select(population, fitnesses, k) for _ in range(n)]
+    return [tournament_select(population, fitnesses, k, rng) for _ in range(n)]
 
 
 # ---------------------------------------------------------------------------
@@ -52,6 +55,7 @@ def single_point_crossover(
     parent_a: List[int],
     parent_b: List[int],
     prob: float = 0.8,
+    rng=None,
 ) -> Tuple[List[int], List[int]]:
     """
     Single-point crossover.
@@ -59,10 +63,11 @@ def single_point_crossover(
     Returns two offspring. With probability (1-prob) the parents are returned
     unchanged (no crossover occurs).
     """
-    if random.random() > prob or NUM_GENES <= 1:
+    rng = rng or random
+    if rng.random() >= prob or NUM_GENES <= 1:
         return list(parent_a), list(parent_b)
 
-    point = random.randint(1, NUM_GENES - 1)
+    point = rng.randint(1, NUM_GENES - 1)
     child_a = parent_a[:point] + parent_b[point:]
     child_b = parent_b[:point] + parent_a[point:]
     return child_a, child_b
@@ -72,7 +77,7 @@ def single_point_crossover(
 # Mutation
 # ---------------------------------------------------------------------------
 
-def mutate(chromosome: List[int], prob: float = 0.1) -> List[int]:
+def mutate(chromosome: List[int], prob: float = 0.1, rng=None) -> List[int]:
     """
     Per-gene mutation: each gene is independently replaced with a random
     valid value with probability `prob`.
@@ -85,7 +90,24 @@ def mutate(chromosome: List[int], prob: float = 0.1) -> List[int]:
         Mutated chromosome (new list, original unchanged).
     """
     mutant = list(chromosome)
+    rng = rng or random
     for i in range(NUM_GENES):
-        if random.random() < prob:
-            mutant[i] = random.randint(0, len(GENE_VALUES[i]) - 1)
+        if rng.random() < prob:
+            mutant[i] = rng.randint(0, len(GENE_VALUES[i]) - 1)
     return mutant
+
+
+def mutate_active(chromosome, rng=None):
+    """Change exactly one expressed choice, excluding duplicate average pooling."""
+    from ga.chromosome import decode, GENE_NAMES
+    rng = rng or random
+    arch = decode(chromosome)
+    active = [i for i, name in enumerate(GENE_NAMES)
+              if not name.startswith("filters_") or int(name.split("_")[1]) <= arch["num_blocks"]]
+    i = rng.choice(active)
+    choices = [v for v in range(len(GENE_VALUES[i])) if v != chromosome[i]]
+    if GENE_NAMES[i] == "pooling":
+        choices = [0] if arch["pooling"] in ("avg", "mixed") else [1]
+    child = list(chromosome)
+    child[i] = rng.choice(choices)
+    return child

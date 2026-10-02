@@ -39,9 +39,10 @@ SCHEMA_VERSION = 2
 # Chromosome operations
 # ---------------------------------------------------------------------------
 
-def random_chromosome() -> List[int]:
+def random_chromosome(rng=None) -> List[int]:
     """Return a random chromosome: a list of integer indices into SEARCH_SPACE."""
-    return [random.randint(0, len(values) - 1) for values in GENE_VALUES]
+    rng = rng or random
+    return [rng.randrange(len(values)) for values in GENE_VALUES]
 
 
 def decode(chromosome: List[int]) -> Dict[str, Any]:
