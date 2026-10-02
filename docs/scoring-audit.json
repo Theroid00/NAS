@@ -1,0 +1,483 @@
+{
+  "comparison": "experiments\\tabular\\comparisons\\20261002_171633_4c55f3e3\\comparison.json",
+  "device": "NVIDIA GeForce RTX 4060 Laptop GPU",
+  "test_set_evaluated": false,
+  "runs": [
+    {
+      "method": "ga",
+      "seed": 42,
+      "trial_id": 15,
+      "budget_verified": 20,
+      "archive_winner_verified": true,
+      "replayed_accuracy_matches": true,
+      "metrics": {
+        "accuracy": 0.7419,
+        "loss": 0.6165407739478438,
+        "samples": 10000,
+        "balanced_accuracy": 0.4379905685245734,
+        "confusion_matrix": [
+          [
+            2604,
+            996,
+            1,
+            0,
+            0,
+            0,
+            45
+          ],
+          [
+            707,
+            4046,
+            87,
+            0,
+            0,
+            34,
+            2
+          ],
+          [
+            0,
+            39,
+            565,
+            0,
+            0,
+            12,
+            0
+          ],
+          [
+            0,
+            1,
+            45,
+            0,
+            0,
+            1,
+            0
+          ],
+          [
+            0,
+            151,
+            10,
+            0,
+            1,
+            1,
+            0
+          ],
+          [
+            0,
+            71,
+            182,
+            0,
+            0,
+            46,
+            0
+          ],
+          [
+            195,
+            1,
+            0,
+            0,
+            0,
+            0,
+            157
+          ]
+        ]
+      }
+    },
+    {
+      "method": "aging",
+      "seed": 42,
+      "trial_id": 13,
+      "budget_verified": 20,
+      "archive_winner_verified": true,
+      "replayed_accuracy_matches": true,
+      "metrics": {
+        "accuracy": 0.7478,
+        "loss": 0.6147446936020106,
+        "samples": 10000,
+        "balanced_accuracy": 0.4594298053102448,
+        "confusion_matrix": [
+          [
+            2596,
+            985,
+            2,
+            0,
+            0,
+            0,
+            63
+          ],
+          [
+            684,
+            4060,
+            98,
+            0,
+            0,
+            32,
+            2
+          ],
+          [
+            0,
+            38,
+            565,
+            0,
+            0,
+            13,
+            0
+          ],
+          [
+            0,
+            0,
+            46,
+            0,
+            0,
+            1,
+            0
+          ],
+          [
+            3,
+            147,
+            12,
+            0,
+            0,
+            1,
+            0
+          ],
+          [
+            0,
+            70,
+            178,
+            0,
+            0,
+            51,
+            0
+          ],
+          [
+            146,
+            1,
+            0,
+            0,
+            0,
+            0,
+            206
+          ]
+        ]
+      }
+    },
+    {
+      "method": "random",
+      "seed": 42,
+      "trial_id": 7,
+      "budget_verified": 20,
+      "archive_winner_verified": true,
+      "replayed_accuracy_matches": true,
+      "metrics": {
+        "accuracy": 0.7398,
+        "loss": 0.6676337935958583,
+        "samples": 10000,
+        "balanced_accuracy": 0.40900138479164166,
+        "confusion_matrix": [
+          [
+            2680,
+            925,
+            3,
+            0,
+            0,
+            0,
+            38
+          ],
+          [
+            749,
+            4014,
+            111,
+            0,
+            0,
+            1,
+            1
+          ],
+          [
+            0,
+            44,
+            571,
+            0,
+            0,
+            1,
+            0
+          ],
+          [
+            0,
+            0,
+            47,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            1,
+            151,
+            11,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            74,
+            223,
+            0,
+            0,
+            2,
+            0
+          ],
+          [
+            221,
+            1,
+            0,
+            0,
+            0,
+            0,
+            131
+          ]
+        ]
+      }
+    },
+    {
+      "method": "ga",
+      "seed": 43,
+      "trial_id": 15,
+      "budget_verified": 20,
+      "archive_winner_verified": true,
+      "replayed_accuracy_matches": true,
+      "metrics": {
+        "accuracy": 0.7097,
+        "loss": 0.7092257161447765,
+        "samples": 10000,
+        "balanced_accuracy": 0.346946016684221,
+        "confusion_matrix": [
+          [
+            2606,
+            1039,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            835,
+            3932,
+            109,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            57,
+            559,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            47,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            1,
+            155,
+            7,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            84,
+            215,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            351,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        ]
+      }
+    },
+    {
+      "method": "aging",
+      "seed": 43,
+      "trial_id": 14,
+      "budget_verified": 20,
+      "archive_winner_verified": true,
+      "replayed_accuracy_matches": true,
+      "metrics": {
+        "accuracy": 0.7312,
+        "loss": 0.6292008109532996,
+        "samples": 10000,
+        "balanced_accuracy": 0.44754627309215156,
+        "confusion_matrix": [
+          [
+            2685,
+            897,
+            2,
+            0,
+            0,
+            0,
+            62
+          ],
+          [
+            927,
+            3829,
+            90,
+            0,
+            0,
+            27,
+            3
+          ],
+          [
+            0,
+            41,
+            559,
+            0,
+            0,
+            16,
+            0
+          ],
+          [
+            0,
+            0,
+            46,
+            0,
+            0,
+            1,
+            0
+          ],
+          [
+            1,
+            150,
+            10,
+            0,
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            67,
+            180,
+            0,
+            0,
+            52,
+            0
+          ],
+          [
+            165,
+            1,
+            0,
+            0,
+            0,
+            0,
+            187
+          ]
+        ]
+      }
+    },
+    {
+      "method": "random",
+      "seed": 43,
+      "trial_id": 6,
+      "budget_verified": 20,
+      "archive_winner_verified": true,
+      "replayed_accuracy_matches": true,
+      "metrics": {
+        "accuracy": 0.7387,
+        "loss": 0.6928034120675132,
+        "samples": 10000,
+        "balanced_accuracy": 0.37907699278069634,
+        "confusion_matrix": [
+          [
+            2745,
+            890,
+            3,
+            0,
+            0,
+            0,
+            8
+          ],
+          [
+            741,
+            4018,
+            111,
+            0,
+            0,
+            6,
+            0
+          ],
+          [
+            0,
+            33,
+            579,
+            0,
+            0,
+            4,
+            0
+          ],
+          [
+            0,
+            1,
+            46,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            4,
+            148,
+            10,
+            0,
+            0,
+            1,
+            0
+          ],
+          [
+            0,
+            81,
+            200,
+            0,
+            0,
+            18,
+            0
+          ],
+          [
+            325,
+            1,
+            0,
+            0,
+            0,
+            0,
+            27
+          ]
+        ]
+      }
+    }
+  ],
+  "identical_proxy_subsets_verified": true,
+  "comparison_summary_verified": true
+}

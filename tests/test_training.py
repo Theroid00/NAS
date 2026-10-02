@@ -41,6 +41,20 @@ class TrainingTests(unittest.TestCase):
         from models.mlp import count_parameters
         self.assertEqual(count_parameters(build_baseline_mlp()), 4130)
 
+    def test_validation_weights_samples_and_disables_training_behavior(self):
+        import torch
+        from torch.utils.data import DataLoader, TensorDataset
+        from training.evaluator import validate
+        logits = torch.tensor([[4., 0.], [0., 4.], [3., 0.], [0., 3.], [2., 0.]])
+        targets = torch.tensor([0, 1, 1, 1, 1])
+        model = torch.nn.Sequential(torch.nn.Dropout(0.9), torch.nn.Identity())
+        loader = DataLoader(TensorDataset(logits, targets), batch_size=2)
+        metrics = validate(model, loader, "cpu", return_metrics=True)
+        self.assertEqual(metrics["accuracy"], 3 / 5)
+        self.assertEqual(metrics["samples"], 5)
+        self.assertAlmostEqual(metrics["loss"], torch.nn.functional.cross_entropy(logits, targets).item(), places=6)
+        self.assertFalse(model.training)
+
     def test_device_requests_are_validated_before_training(self):
         from utils.search_runtime import resolve_device
         self.assertEqual(resolve_device("cpu"), "cpu")
