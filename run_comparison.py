@@ -84,6 +84,7 @@ def compare(methods, seeds, budget=300, population=20, proxy_epochs=20, device="
                     result = run_random_search(n_evaluations=budget, **common)
                 if row is None:
                     row = {"method": method, "seed": seed, "best_proxy_fitness": result["best_fitness"], "best_proxy_validation_loss": result["best_validation_loss"],
+                           "best_proxy_metrics": result.get("best_validation_metrics"), "num_params": result.get("num_params"),
                            "evaluation_count": result["evaluation_count"], "search_elapsed_s": result["elapsed_s"],
                            "total_evaluation_seconds": result["total_evaluation_seconds"],
                            "winner_path": result["save_path"], "full_training": []}
@@ -107,6 +108,7 @@ def compare(methods, seeds, budget=300, population=20, proxy_epochs=20, device="
                                           seed=full_seed, split_seed=split_seed, save_dir=str(directory),
                                           run_id=full_run_id, evaluate_test=False, dataset=dataset)
                         row["full_training"].append({"seed": full_seed, "best_val_accuracy": full["best_val_accuracy"], "best_val_loss": full["best_val_loss"],
+                                                      "best_val_metrics": full.get("best_val_metrics"), "elapsed_s": full["elapsed_s"],
                                                       "num_params": full["num_params"], "results_path": full["results_path"]})
                         save()
         manifest["summary"] = {}
@@ -122,6 +124,10 @@ def compare(methods, seeds, budget=300, population=20, proxy_epochs=20, device="
                                             "mean_search_elapsed_s": statistics.mean(times)}
             if losses:
                 manifest["summary"][method]["proxy_validation_loss_mean"] = statistics.mean(losses)
+            for metric in ("balanced_accuracy", "macro_f1"):
+                scores = [(r.get("best_proxy_metrics") or {}).get(metric) for r in manifest["runs"] if r["method"] == method]
+                if all(score is not None for score in scores):
+                    manifest["summary"][method]["proxy_" + metric + "_mean"] = statistics.mean(scores)
             if full_values:
                 manifest["summary"][method].update(full_validation_mean=statistics.mean(full_values),
                                                    full_validation_std=statistics.stdev(full_values) if len(full_values) > 1 else None)

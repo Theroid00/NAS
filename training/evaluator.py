@@ -10,6 +10,7 @@ def validate(model, loader, device, return_metrics=False):
     model.eval()
     correct = total = 0
     loss_sum = 0.0
+    confusion = None
     with torch.no_grad():
         for x, y in loader:
             x, y = x.to(device), y.to(device)
@@ -20,10 +21,16 @@ def validate(model, loader, device, return_metrics=False):
             total += y.size(0)
             if return_metrics:
                 loss_sum += nn.functional.cross_entropy(logits, y, reduction="sum").item()
+                classes = logits.shape[1]
+                if confusion is None:
+                    confusion = torch.zeros((classes, classes), dtype=torch.long, device=device)
+                confusion += torch.bincount(y * classes + logits.argmax(1), minlength=classes * classes).reshape(classes, classes)
     if total == 0:
         raise ValueError("Validation loader is empty")
     if return_metrics:
-        return {"accuracy": correct / total, "loss": loss_sum / total, "samples": total}
+        from training.metrics import classification_metrics
+        return {"accuracy": correct / total, "loss": loss_sum / total, "samples": total,
+                **classification_metrics(confusion.cpu().numpy())}
     return correct / total
 
 
@@ -68,6 +75,7 @@ def evaluate_trial(chromosome, device="cpu", proxy_epochs=20, seed=42, split_see
             scheduler.step()
         metrics = validate(model, val_loader, device, return_metrics=True)
         return {"fitness": metrics["accuracy"], "validation_loss": metrics["loss"],
+                "validation_metrics": metrics,
                 "training_samples": len(train_loader.dataset), "validation_samples": metrics["samples"],
                 "status": "ok", "num_params": params,
                 "elapsed_s": time.perf_counter() - started}

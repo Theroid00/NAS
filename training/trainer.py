@@ -58,6 +58,7 @@ def train_model(model, device, epochs, save_dir, run_id, seed, split_seed,
     checkpoint = root / f"ckpt_{run_id}_best.pt"
     best_val = -1.0
     best_val_loss = None
+    best_val_metrics = None
     history = []
     started = time.perf_counter()
     for epoch in range(epochs):
@@ -85,17 +86,21 @@ def train_model(model, device, epochs, save_dir, run_id, seed, split_seed,
         if val > best_val:
             best_val = val
             best_val_loss = val_loss
+            best_val_metrics = metrics if isinstance(metrics, dict) else {"accuracy": val}
             underlying = model
             torch.save(underlying.state_dict(), checkpoint)
         history.append({"epoch": epoch + 1, "train_acc": correct / total,
-                        "train_loss": running_loss / total, "val_acc": val, "val_loss": val_loss})
+                        "train_loss": running_loss / total, "val_acc": val, "val_loss": val_loss,
+                        "val_metrics": metrics if isinstance(metrics, dict) else {"accuracy": val}})
         print(f"Epoch {epoch + 1}: train={correct / total:.4f}, val={val:.4f}, best={best_val:.4f}")
     underlying = model
     underlying.load_state_dict(torch.load(checkpoint, map_location=primary, weights_only=True))
-    test_acc = validate(model, test_loader, primary) if evaluate_test else None
+    test_metrics = validate(model, test_loader, primary, return_metrics=True) if evaluate_test else None
+    test_acc = test_metrics["accuracy"] if isinstance(test_metrics, dict) else test_metrics
     results_path = root / f"full_train_{run_id}.json"
     result = {**(metadata or {}), "dataset": dataset_metadata(split_seed, dataset), "run_id": run_id, "seed": seed, "split_seed": split_seed,
               "num_params": params, "best_val_accuracy": best_val, "best_val_loss": best_val_loss, "test_accuracy": test_acc,
+              "best_val_metrics": best_val_metrics, "test_metrics": test_metrics,
               "history": history, "elapsed_s": time.perf_counter() - started,
               "checkpoint_path": str(checkpoint.resolve()), "results_path": str(results_path.resolve()),
               "protocol": {"optimizer": "Adam", "learning_rate": LEARNING_RATE,
@@ -130,6 +135,8 @@ def evaluate_checkpoint(results_path, device="cpu"):
     model = model.to(primary)
     model.load_state_dict(torch.load(result["checkpoint_path"], map_location=primary, weights_only=True))
     _, _, test = get_full_loaders(seed=result["split_seed"], training_seed=result["seed"], dataset=dataset)
-    result["test_accuracy"] = validate(model, test, primary)
-    path.write_text(json.dumps(result, indent=2), encoding="utf-8")
+    metrics = validate(model, test, primary, return_metrics=True)
+    result["test_accuracy"] = metrics["accuracy"] if isinstance(metrics, dict) else metrics
+    result["test_metrics"] = metrics
+    atomic_json(path, result)
     return result

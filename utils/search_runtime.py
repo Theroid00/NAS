@@ -14,7 +14,7 @@ from uuid import uuid4
 from ga.chromosome import decode, SEARCH_SPACE, SCHEMA_VERSION
 from utils.persistence import atomic_json, RunLock
 
-RESUME_VERSION = 1
+RESUME_VERSION = 2
 
 
 def validate_budget(budget, proxy_epochs, population_size=1, tournament_k=1):
@@ -280,6 +280,7 @@ class SearchSession:
                   "winner_policy": "best_observed_validation_accuracy",
                   "best_chromosome": self.best["chromosome"], "best_arch": self.best["arch"],
                   "best_fitness": self.best["fitness"], "best_validation_loss": self.best.get("validation_loss"), "best_trial_id": self.best["trial_id"],
+                  "best_validation_metrics": self.best.get("validation_metrics"), "num_params": self.best.get("num_params"),
                   "hyperparams": self.config, "evaluation_count": self.count,
                   "elapsed_s": self.previous_elapsed + time.perf_counter() - self.started,
                   "total_evaluation_seconds": self.evaluation_seconds,
