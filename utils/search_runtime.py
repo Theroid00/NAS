@@ -9,6 +9,7 @@ from pathlib import Path
 import platform
 import random
 import time
+import subprocess
 from uuid import uuid4
 
 from ga.chromosome import decode, SEARCH_SPACE, SCHEMA_VERSION
@@ -71,6 +72,13 @@ class SearchSession:
                          "search_space": SEARCH_SPACE, "smoke": smoke, "config": config,
                          "python": platform.python_version(), "platform": platform.platform(),
                          "versions": versions, "status": "running"}
+        try:
+            root = Path(__file__).resolve().parents[1]
+            revision = subprocess.run(["git", "-c", f"safe.directory={root.as_posix()}", "rev-parse", "HEAD"],
+                                      cwd=root, capture_output=True, text=True, check=True)
+            self.metadata["git_commit"] = revision.stdout.strip()
+        except (OSError, subprocess.CalledProcessError):
+            self.metadata["git_commit"] = None
 
     def _write_metadata(self):
         self.metadata_path.write_text(json.dumps(self.metadata, indent=2), encoding="utf-8")

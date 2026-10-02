@@ -1,48 +1,51 @@
-import os
-import matplotlib.pyplot as plt
-import seaborn as sns
-import pandas as pd
-import numpy as np
+"""Repeated population/proxy-epoch sweeps; record unequal training costs explicitly."""
+import argparse
+from datetime import datetime
+import json
+from pathlib import Path
+from uuid import uuid4
 from ga.engine import run_nas
 
+
 def main():
-    pop_sizes = [10, 20, 30]
-    epoch_sizes = [3, 5, 8]
-    
-    results = np.zeros((len(pop_sizes), len(epoch_sizes)))
-    
-    print("Running Hyperparameter Sweep...")
-    for i, pop in enumerate(pop_sizes):
-        for j, ep in enumerate(epoch_sizes):
-            print(f"\n--- Sweeping Pop={pop}, Epochs={ep} ---")
-            res = run_nas(
-                population_size=pop,
-                n_generations=5,  # short run for sweeping
-                proxy_epochs=ep,
-                device="cuda",
-                log_dir=f"experiments/sweep",
-                save_dir=f"experiments/sweep",
-            )
-            results[i, j] = res["best_fitness"]
-            
-    # Plot heatmap
-    fig, ax = plt.subplots(figsize=(8, 6))
-    sns.heatmap(
-        results, 
-        annot=True, 
-        fmt=".4f", 
-        xticklabels=epoch_sizes, 
-        yticklabels=pop_sizes,
-        cmap="viridis"
-    )
-    ax.set_xlabel("Proxy Epochs")
-    ax.set_ylabel("Population Size")
-    ax.set_title("Hyperparameter Sensitivity (Best Fitness at Gen 5)")
-    
-    out_path = "experiments/sweep/hyperparam_heatmap.png"
-    plt.tight_layout()
-    fig.savefig(out_path, dpi=300)
-    print(f"\nSweep heatmap saved to {out_path}")
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--seeds", nargs="+", type=int, default=[42, 43, 44])
+    p.add_argument("--budget", type=int, default=150)
+    p.add_argument("--populations", nargs="+", type=int, default=[10, 20, 30])
+    p.add_argument("--proxy-epochs", nargs="+", type=int, default=[3, 5, 8])
+    p.add_argument("--device", default="cpu")
+    p.add_argument("--split-seed", type=int, default=42)
+    p.add_argument("--smoke", action="store_true")
+    p.add_argument("--out-dir", default="experiments/comparisons")
+    args = p.parse_args()
+    if len(set(args.seeds)) != len(args.seeds) or min(args.populations) < 2 or args.budget < max(args.populations) or min(args.proxy_epochs) < 1:
+        p.error("Use distinct seeds, positive epochs, populations >=2, and sufficient budget")
+    root = Path(args.out_dir) / ("sweep_" + datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + uuid4().hex[:8])
+    root.mkdir(parents=True)
+    result = {"config": vars(args), "budget_kind": "candidate_evaluations; proxy epochs vary",
+              "runs": [], "status": "running"}
+    path = root / "sweep.json"
+    try:
+        for seed in args.seeds:
+            for population in args.populations:
+                for epochs in args.proxy_epochs:
+                    directory = root / f"pop{population}_epochs{epochs}" / str(seed)
+                    run = run_nas(evaluation_budget=args.budget, population_size=population,
+                                  proxy_epochs=epochs, device=args.device, seed=seed,
+                                  split_seed=args.split_seed, smoke=args.smoke,
+                                  log_dir=str(directory), save_dir=str(directory))
+                    result["runs"].append({"population": population, "proxy_epochs": epochs, "seed": seed,
+                                           "best_fitness": run["best_fitness"], "elapsed_s": run["elapsed_s"],
+                                           "evaluation_count": run["evaluation_count"], "winner_path": run["save_path"]})
+                    path.write_text(json.dumps(result, indent=2), encoding="utf-8")
+        result["status"] = "completed"
+    except BaseException as error:
+        result.update(status="failed", error=str(error))
+        raise
+    finally:
+        path.write_text(json.dumps(result, indent=2), encoding="utf-8")
+    print(path)
+
 
 if __name__ == "__main__":
-    main() 
+    main()

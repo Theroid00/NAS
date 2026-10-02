@@ -77,7 +77,7 @@ def plot_convergence(
     ax.set_ylabel("Validation Accuracy")
     ax.set_title("GA-NAS Convergence")
     ax.legend()
-    ax.set_xlim(gens[0], gens[-1])
+    ax.set_xlim(gens[0] - 0.5, gens[-1] + 0.5)
     ax.set_ylim(0, 1)
 
     plt.tight_layout()
@@ -111,14 +111,14 @@ def plot_architecture(
     Returns:
         Path to the saved figure.
     """
-    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
 
     num_blocks = arch["num_blocks"]
-    filter_keys = ["filters_1", "filters_2", "filters_3"]
+    filter_keys = [f"filters_{i}" for i in range(1, 6)]
     colors = plt.cm.Blues(np.linspace(0.3, 0.8, num_blocks + 3))
 
     fig, ax = plt.subplots(figsize=(max(8, num_blocks * 2 + 4), 4))
-    ax.set_xlim(0, num_blocks + 4)
+    ax.set_xlim(0, 0.5 + 1.2 * (num_blocks + 2) + 0.6)
     ax.set_ylim(0, 3)
     ax.axis("off")
 
@@ -142,11 +142,15 @@ def plot_architecture(
     for i in range(num_blocks):
         fkey = filter_keys[min(i, len(filter_keys) - 1)]
         filters = arch.get(fkey, arch["filters_3"])
+        convs = "2×Conv" if arch.get("use_residual", False) else "Conv"
+        pooling = "Avg" if arch["pooling"] == "mixed" else arch["pooling"].capitalize()
         label = (
-            f"Conv{arch['kernel_size']}×{arch['kernel_size']}\n"
+            f"{convs}{arch['kernel_size']}×{arch['kernel_size']}\n"
             f"{filters}ch\n"
-            f"+{arch['pooling'].capitalize()}Pool"
+            f"+{pooling}Pool"
         )
+        if arch.get("use_residual", False):
+            label += "\n+skip"
         ax.annotate("", xy=(x - 0.4, 1.5), xytext=(x - 0.85, 1.5),
                     arrowprops=dict(arrowstyle="->", color="gray"))
         _draw_block(ax, x, label, colors[i + 1])
@@ -159,7 +163,7 @@ def plot_architecture(
     x += 1.2
     ax.annotate("", xy=(x - 0.4, 1.5), xytext=(x - 0.85, 1.5),
                 arrowprops=dict(arrowstyle="->", color="gray"))
-    _draw_block(ax, x, "Output\n10 classes", colors[-1])
+    _draw_block(ax, x, "Output\n10 logits", colors[-1])
 
     title = (
         f"Blocks={num_blocks}  "
@@ -243,6 +247,7 @@ def plot_comparison_bar(
     results: dict,
     out_path: str = "experiments/comparison.png",
     show: bool = False,
+    metric_label: str = "test_accuracy",
 ) -> str:
     """
     Bar chart comparing test accuracies of GA-NAS vs. baselines.
@@ -262,8 +267,8 @@ def plot_comparison_bar(
 
     fig, ax = plt.subplots(figsize=(7, 4))
     bars = ax.bar(methods, accs, color=colors, edgecolor="white", linewidth=1.2)
-    ax.set_ylabel("Test Accuracy (%)")
-    ax.set_title("GA-NAS vs. Baselines on CIFAR-10")
+    ax.set_ylabel("Validation Accuracy (%)" if metric_label == "best_val_accuracy" else "Test Accuracy (%)")
+    ax.set_title("Measured CIFAR-10 Results")
     ax.set_ylim(0, 100)
     for bar, acc in zip(bars, accs):
         ax.text(

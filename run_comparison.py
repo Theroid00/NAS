@@ -94,8 +94,7 @@ def main():
     p.add_argument("--full-seeds", nargs="+", type=int, default=[101])
     p.add_argument("--out-dir", default="experiments/comparisons")
     args = vars(p.parse_args())
-    args["population"] = args.pop("population")
-    compare(**{k.replace("-", "_"): v for k, v in args.items()})
+    compare(**args)
 
 
 if __name__ == "__main__":

@@ -1,66 +1,53 @@
+"""Repeated operator ablations with a common candidate-evaluation budget."""
 import argparse
-import os
-import copy
+from datetime import datetime
+import json
+from pathlib import Path
+import statistics
+from uuid import uuid4
 from ga.engine import run_nas
-from utils.visualiser import plot_convergence
 
-def run_ablation(name, **kwargs):
-    print(f"\n{'='*40}\nRunning Ablation: {name}\n{'='*40}")
-    os.environ["WANDB_DISABLED"] = "true"
-    result = run_nas(
-        population_size=kwargs.get("pop", 20),
-        n_generations=10,
-        proxy_epochs=5,
-        crossover_prob=kwargs.get("cx", 0.8),
-        mutation_prob=kwargs.get("mut", 0.1),
-        tournament_k=kwargs.get("tk", 5),
-        n_elites=kwargs.get("elites", 2),
-        device="cuda",
-        log_dir=f"experiments/ablations/{name}",
-        save_dir=f"experiments/ablations/{name}"
-    )
-    return result["log_path"]
+CONFIGS = {"baseline": {}, "no_crossover": {"crossover_prob": 0.0},
+           "no_mutation": {"mutation_prob": 0.0}, "no_elitism": {"n_elites": 0},
+           "small_pop": {"population_size": 10}}
+
 
 def main():
-    os.makedirs("experiments/ablations", exist_ok=True)
-    
-    logs = {}
-    
-    # 1. Baseline GA (already has our new adaptive mutation and k=5)
-    logs["baseline"] = run_ablation("baseline")
-    
-    # 2. No crossover
-    logs["no_crossover"] = run_ablation("no_crossover", cx=0.0)
-    
-    # 3. No mutation
-    logs["no_mutation"] = run_ablation("no_mutation", mut=0.0)
-    
-    # 4. No elitism
-    logs["no_elitism"] = run_ablation("no_elitism", elites=0)
-    
-    # 5. Smaller population
-    logs["small_pop"] = run_ablation("small_pop", pop=10)
-    
-    # Plotting them all together
-    import matplotlib.pyplot as plt
-    import pandas as pd
-    import seaborn as sns
-    sns.set_theme(style="darkgrid", context="paper")
-    
-    fig, ax = plt.subplots(figsize=(10, 6))
-    for name, log_path in logs.items():
-        df = pd.read_csv(log_path)
-        ax.plot(df["gen"], df["best_fitness"], marker="o", label=name)
-        
-    ax.set_xlabel("Generation")
-    ax.set_ylabel("Best Validation Accuracy (Proxy)")
-    ax.set_title("Ablation Study: Component Contributions")
-    ax.legend()
-    
-    out_path = "experiments/ablations/ablation_comparison.png"
-    plt.tight_layout()
-    fig.savefig(out_path, dpi=300)
-    print(f"\nAblation plot saved to: {out_path}")
+    p = argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--seeds", nargs="+", type=int, default=[42, 43, 44])
+    p.add_argument("--budget", type=int, default=200)
+    p.add_argument("--device", default="cpu")
+    p.add_argument("--proxy-epochs", type=int, default=5)
+    p.add_argument("--split-seed", type=int, default=42)
+    p.add_argument("--smoke", action="store_true")
+    p.add_argument("--out-dir", default="experiments/comparisons")
+    args = p.parse_args()
+    if args.budget < 20 or len(set(args.seeds)) != len(args.seeds):
+        p.error("Budget must cover population 20; seeds must be distinct")
+    root = Path(args.out_dir) / ("ablations_" + datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + uuid4().hex[:8])
+    root.mkdir(parents=True)
+    result = {"config": vars(args), "budget_kind": "candidate_evaluations", "runs": [], "status": "running"}
+    path = root / "ablations.json"
+    try:
+        for seed in args.seeds:
+            for name, settings in CONFIGS.items():
+                directory = root / name / str(seed)
+                run = run_nas(evaluation_budget=args.budget, proxy_epochs=args.proxy_epochs,
+                              device=args.device, seed=seed, split_seed=args.split_seed,
+                              smoke=args.smoke, log_dir=str(directory), save_dir=str(directory), **settings)
+                result["runs"].append({"name": name, "seed": seed, "best_fitness": run["best_fitness"],
+                                       "evaluation_count": run["evaluation_count"], "winner_path": run["save_path"]})
+                path.write_text(json.dumps(result, indent=2), encoding="utf-8")
+        result["summary"] = {name: statistics.mean(r["best_fitness"] for r in result["runs"] if r["name"] == name)
+                              for name in CONFIGS}
+        result["status"] = "completed"
+    except BaseException as error:
+        result.update(status="failed", error=str(error))
+        raise
+    finally:
+        path.write_text(json.dumps(result, indent=2), encoding="utf-8")
+    print(path)
+
 
 if __name__ == "__main__":
     main()

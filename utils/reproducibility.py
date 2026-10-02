@@ -1,8 +1,10 @@
 """Training randomness is independent of the architecture search RNG."""
 import random
+import os
 
 
 def set_training_seed(seed):
+    os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
     import numpy as np
     import torch
     random.seed(seed)
