@@ -47,7 +47,7 @@ def main():
     p.add_argument("--device", default="cpu")
     p.add_argument("--out-dir", default="experiments/proxy_calibration")
     args = p.parse_args()
-    if args.samples < 3 or not 1 <= args.top_k <= args.samples or not args.seeds or len(set(args.seeds)) != len(args.seeds):
+    if not 3 <= args.samples <= 207360 or not 1 <= args.top_k <= args.samples or not args.seeds or len(set(args.seeds)) != len(args.seeds):
         p.error("Use at least three samples, distinct training seeds, and top-k within sample count")
     if args.proxy_epochs < 1 or args.long_epochs <= args.proxy_epochs or not 1 <= args.proxy_size <= 48000:
         p.error("Use positive proxy epochs, longer reference training, and a valid proxy size")

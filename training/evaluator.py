@@ -25,7 +25,7 @@ def validate(model, loader, device):
 def evaluate_trial(chromosome, device="cpu", proxy_epochs=5, seed=42, split_seed=42,
                    proxy_size=10000, max_params=None):
     from ga.chromosome import decode
-    from models.builder import build_model, count_parameters
+    from models.builder import build_model, count_parameters, estimate_parameters
     from data.cifar import get_proxy_loaders
     from utils.reproducibility import set_training_seed
     if proxy_epochs < 1:
@@ -33,16 +33,17 @@ def evaluate_trial(chromosome, device="cpu", proxy_epochs=5, seed=42, split_seed
     set_training_seed(seed)
     started = time.perf_counter()
     model = None
-    params = None
+    arch = decode(chromosome)
+    params = estimate_parameters(arch)
     try:
-        model = build_model(decode(chromosome)).to(device)
+        if max_params is not None and params > max_params:
+            return {"fitness": 0.0, "status": "parameter_limit", "num_params": params,
+                    "elapsed_s": time.perf_counter() - started}
+        model = build_model(arch).to(device)
         model.eval()
         with torch.no_grad():
             model(torch.zeros(2, 3, 32, 32, device=device))
         params = count_parameters(model)
-        if max_params is not None and params > max_params:
-            return {"fitness": 0.0, "status": "parameter_limit", "num_params": params,
-                    "elapsed_s": time.perf_counter() - started}
         train_loader, val_loader = get_proxy_loaders(proxy_size=proxy_size, seed=split_seed, training_seed=seed)
         optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
         scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=proxy_epochs)

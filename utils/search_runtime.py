@@ -52,6 +52,9 @@ def evaluate_task(chromosome, device, proxy_epochs, seed, split_seed, proxy_size
 
 class SearchSession:
     def __init__(self, method, config, log_dir, save_dir, smoke=False, evaluator=None):
+        for name in ("seed", "split_seed"):
+            if type(config[name]) is not int or not 0 <= config[name] < 2 ** 32:
+                raise ValueError(f"{name} must be an integer within 0..2^32-1")
         self.method, self.config, self.smoke = method, config, smoke
         self.evaluator = evaluator or evaluate_task
         self.run_id = time.strftime("%Y%m%d_%H%M%S") + "_" + uuid4().hex[:10]
@@ -61,6 +64,7 @@ class SearchSession:
         self.trial_path = self.log_dir / f"trials_{self.run_id}.jsonl"
         self.metadata_path = self.log_dir / f"metadata_{self.run_id}.json"
         self.count, self.best, self.executors = 0, None, []
+        self.evaluation_seconds = 0.0
         self.started = time.perf_counter()
         versions = {}
         for name in ("torch", "torchvision", "numpy"):
@@ -155,6 +159,7 @@ class SearchSession:
         self.file.write(json.dumps(record, allow_nan=False) + "\n")
         self.file.flush()
         self.count += 1
+        self.evaluation_seconds += record.get("elapsed_s", 0.0)
 
     def finish(self, log_path=None):
         if self.best is None:
@@ -166,6 +171,7 @@ class SearchSession:
                   "best_fitness": self.best["fitness"], "best_trial_id": self.best["trial_id"],
                   "hyperparams": self.config, "evaluation_count": self.count,
                   "elapsed_s": time.perf_counter() - self.started,
+                  "total_evaluation_seconds": self.evaluation_seconds,
                   "trial_path": str(self.trial_path), "metadata_path": str(self.metadata_path),
                   "log_path": log_path}
         path = self.save_dir / f"best_{self.run_id}.json"
@@ -178,7 +184,8 @@ class SearchSession:
             executor.shutdown(wait=True, cancel_futures=True)
         self.file.close()
         self.metadata.update(status="failed" if error else "completed", evaluation_count=self.count,
-                             elapsed_s=time.perf_counter() - self.started)
+                             elapsed_s=time.perf_counter() - self.started,
+                             total_evaluation_seconds=self.evaluation_seconds)
         if error:
             self.metadata["error"] = str(error)
         self._write_metadata()

@@ -48,6 +48,7 @@ def compare(methods, seeds, budget=300, population=20, proxy_epochs=5, device="c
                     result = run_random_search(n_evaluations=budget, **common)
                 row = {"method": method, "seed": seed, "best_proxy_fitness": result["best_fitness"],
                        "evaluation_count": result["evaluation_count"], "search_elapsed_s": result["elapsed_s"],
+                       "total_evaluation_seconds": result["total_evaluation_seconds"],
                        "winner_path": result["save_path"], "full_training": []}
                 manifest["runs"].append(row)
                 save()
@@ -64,9 +65,14 @@ def compare(methods, seeds, budget=300, population=20, proxy_epochs=5, device="c
         for method in methods:
             values = [r["best_proxy_fitness"] for r in manifest["runs"] if r["method"] == method]
             times = [r["search_elapsed_s"] for r in manifest["runs"] if r["method"] == method]
+            full_values = [statistics.mean(f["best_val_accuracy"] for f in r["full_training"])
+                           for r in manifest["runs"] if r["method"] == method and r["full_training"]]
             manifest["summary"][method] = {"n_searches": len(values), "proxy_mean": statistics.mean(values),
                                             "proxy_std": statistics.stdev(values) if len(values) > 1 else None,
                                             "mean_search_elapsed_s": statistics.mean(times)}
+            if full_values:
+                manifest["summary"][method].update(full_validation_mean=statistics.mean(full_values),
+                                                   full_validation_std=statistics.stdev(full_values) if len(full_values) > 1 else None)
         manifest["status"] = "completed"
     except BaseException as error:
         manifest.update(status="failed", error=str(error))

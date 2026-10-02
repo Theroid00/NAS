@@ -22,7 +22,7 @@ def run_nas(device="cpu", population_size=20, n_generations=15, proxy_epochs=5,
         raise ValueError("Operator probabilities must be between zero and one")
     if not 1 <= proxy_size <= 48000 or max_params is not None and max_params < 1:
         raise ValueError("Proxy size must be within 1..48000; parameter limit must be positive")
-    config = dict(device=device, population_size=population_size, n_generations=n_generations,
+    config = dict(device=device, population_size=population_size, n_generations=(budget + population_size - 1) // population_size,
                   proxy_epochs=proxy_epochs, crossover_prob=crossover_prob, mutation_prob=mutation_prob,
                   tournament_k=tournament_k, n_elites=n_elites, parallel=use_parallel_gpus,
                   seed=seed, split_seed=split_seed, proxy_size=proxy_size, max_params=max_params,

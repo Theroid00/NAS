@@ -24,7 +24,7 @@ class TrainingTests(unittest.TestCase):
     def test_supported_depths_have_valid_forward_and_backward(self):
         import torch
         from ga.chromosome import decode
-        from models.builder import build_model
+        from models.builder import build_model, estimate_parameters, count_parameters
         for depth in range(4):
             for residual in (0, 1):
                 chromosome = [0] * 13
@@ -32,6 +32,7 @@ class TrainingTests(unittest.TestCase):
                 model = build_model(decode(chromosome))
                 logits = model(torch.randn(2, 3, 32, 32))
                 self.assertEqual(tuple(logits.shape), (2, 10))
+                self.assertEqual(count_parameters(model), estimate_parameters(decode(chromosome)))
                 logits.sum().backward()
 
     def test_baseline_parameter_count(self):
@@ -39,12 +40,32 @@ class TrainingTests(unittest.TestCase):
         from models.builder import count_parameters
         self.assertEqual(count_parameters(build_baseline_resnet()), 1227594)
 
+    def test_device_requests_are_validated_before_training(self):
+        from utils.search_runtime import resolve_devices
+        self.assertEqual(resolve_devices("cpu"), ["cpu"])
+        with self.assertRaises(ValueError):
+            resolve_devices("cpu", parallel=True)
+        with patch("torch.cuda.is_available", return_value=True), patch("torch.cuda.device_count", return_value=1):
+            with self.assertRaises(ValueError):
+                resolve_devices("cuda", parallel=True)
+            with self.assertRaises(ValueError):
+                resolve_devices("cuda:1")
+
+    def test_baseline_uses_shared_optimizer_and_checkpoint_protocol(self):
+        from training.trainer import full_train
+        with tempfile.TemporaryDirectory() as directory, patch("data.cifar.get_full_loaders", return_value=self.loaders()):
+            result = full_train(baseline=True, epochs=1, save_dir=directory, evaluate_test=False)
+            self.assertEqual(result["protocol"]["optimizer"], "Adam")
+            self.assertEqual(result["protocol"]["checkpoint_policy"], "best_validation")
+            self.assertEqual(result["num_params"], 1227594)
+
     def test_parameter_limit_does_not_load_training_data(self):
         from training.evaluator import evaluate_trial
-        with patch("data.cifar.get_proxy_loaders") as loader:
+        with patch("data.cifar.get_proxy_loaders") as loader, patch("models.builder.build_model") as builder:
             result = evaluate_trial([0] * 13, max_params=1)
             self.assertEqual(result["status"], "parameter_limit")
             loader.assert_not_called()
+            builder.assert_not_called()
 
     def test_infrastructure_failure_is_not_zero_fitness(self):
         from training.evaluator import evaluate_trial

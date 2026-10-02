@@ -45,6 +45,29 @@ def _get_pool(name: str, stride: int = 2) -> nn.Module:
 
 FILTER_KEYS = ["filters_1", "filters_2", "filters_3", "filters_4", "filters_5"]
 
+
+def estimate_parameters(arch, num_classes=10):
+    """Exact count for this builder, before allocating candidate weights."""
+    in_ch, total = 3, 0
+    kernel = arch["kernel_size"]
+    for i in range(arch["num_blocks"]):
+        out_ch = arch.get(FILTER_KEYS[i], arch["filters_3"])
+        total += in_ch * out_ch * kernel ** 2 + out_ch
+        if arch["batch_norm"]:
+            total += 2 * out_ch
+        if arch.get("use_residual", False):
+            total += out_ch ** 2 * kernel ** 2 + out_ch
+            if arch["batch_norm"]:
+                total += 2 * out_ch
+            if in_ch != out_ch:
+                total += in_ch * out_ch
+                if arch["batch_norm"]:
+                    total += 2 * out_ch
+        in_ch = out_ch
+    spatial = 32 // (2 ** arch["num_blocks"])
+    hidden = arch["fc_hidden"]
+    return total + in_ch * spatial ** 2 * hidden + hidden + hidden * num_classes + num_classes
+
 class ConvBlock(nn.Module):
     def __init__(self, in_ch, out_ch, kernel_size, activation_name, use_bn, pool_name):
         super().__init__()

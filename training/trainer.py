@@ -19,6 +19,8 @@ def full_train(chromosome=None, device="cpu", epochs=FULL_EPOCHS,
     from models.baselines.resnet import build_baseline_resnet
     if epochs < 1:
         raise ValueError("Full-training epochs must be positive")
+    if any(type(value) is not int or not 0 <= value < 2 ** 32 for value in (seed, split_seed)):
+        raise ValueError("Training and split seeds must be integers within 0..2^32-1")
     arch = None if baseline else decode(chromosome)
     set_training_seed(seed)
     model = build_baseline_resnet() if baseline else build_model(arch)
