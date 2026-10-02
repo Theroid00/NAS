@@ -75,3 +75,34 @@ class ProvenanceTests(unittest.TestCase):
             manifest = json.loads(next(Path(directory).glob("*/comparison.json")).read_text())
             self.assertEqual(manifest["status"], "failed")
             self.assertEqual(manifest["runs"], [])
+
+    def test_source_change_after_search_blocks_retraining(self):
+        from run_comparison import compare
+        original = source_fingerprint()
+        with tempfile.TemporaryDirectory() as directory:
+            with patch("run_comparison.source_fingerprint", side_effect=[original, original, {"changed": True}]), patch(
+                    "training.trainer.full_train", side_effect=AssertionError("Trained changed source")):
+                with self.assertRaisesRegex(ValueError, "Source files changed during"):
+                    compare(["random"], [1], budget=2, population=2, proxy_epochs=1,
+                            full_epochs=1, out_dir=directory)
+            manifest = json.loads(next(Path(directory).glob("*/comparison.json")).read_text())
+            self.assertEqual(manifest["status"], "failed")
+            self.assertEqual(manifest["runs"][0]["full_training"], [])
+
+    def test_saved_full_result_with_different_source_is_not_reused(self):
+        from run_comparison import compare, resume_comparison
+        with tempfile.TemporaryDirectory() as directory:
+            manifest = compare(["random"], [1], budget=2, population=2, proxy_epochs=1,
+                               full_epochs=1, out_dir=directory)
+            path = next(Path(directory).glob("*/comparison.json"))
+            full_path = Path(manifest["runs"][0]["full_training"][0]["results_path"])
+            full = json.loads(full_path.read_text())
+            full["source_fingerprint"] = {"changed": True}
+            full_path.write_text(json.dumps(full))
+            before = full_path.read_bytes()
+            manifest["runs"][0]["full_training"] = []
+            path.write_text(json.dumps(manifest))
+            with patch("training.trainer.full_train", side_effect=AssertionError("Retrained saved result")):
+                with self.assertRaisesRegex(ValueError, "Final training source differs"):
+                    resume_comparison(path)
+            self.assertEqual(full_path.read_bytes(), before)

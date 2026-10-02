@@ -99,6 +99,8 @@ def compare(methods, seeds, budget=300, population=20, proxy_epochs=20, device="
                 if full_epochs is not None:
                     from training.trainer import full_train
                     for full_seed in full_seeds:
+                        if source_fingerprint() != manifest["source_fingerprint"]:
+                            raise ValueError("Source files changed during the comparison; restore its original implementation")
                         if any(f["seed"] == full_seed for f in row["full_training"]):
                             continue
                         full_run_id = f"{result['run_id']}_seed{full_seed}"
@@ -113,6 +115,8 @@ def compare(methods, seeds, budget=300, population=20, proxy_epochs=20, device="
                             full = full_train(result["best_chromosome"], device=device, epochs=full_epochs,
                                           seed=full_seed, split_seed=split_seed, save_dir=str(directory),
                                           run_id=full_run_id, evaluate_test=False, dataset=dataset)
+                        if full.get("source_fingerprint") != manifest["source_fingerprint"]:
+                            raise ValueError("Final training source differs from the comparison implementation")
                         row["full_training"].append({"seed": full_seed, "best_val_accuracy": full["best_val_accuracy"], "best_val_loss": full["best_val_loss"],
                                                       "best_val_metrics": full.get("best_val_metrics"), "elapsed_s": full["elapsed_s"],
                                                       "num_params": full["num_params"], "results_path": full["results_path"]})
