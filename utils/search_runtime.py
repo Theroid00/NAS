@@ -13,8 +13,9 @@ from uuid import uuid4
 
 from ga.chromosome import decode, SEARCH_SPACE, SCHEMA_VERSION
 from utils.persistence import atomic_json, RunLock
+from utils.provenance import source_fingerprint
 
-RESUME_VERSION = 2
+RESUME_VERSION = 3
 
 
 def validate_budget(budget, proxy_epochs, population_size=1, tournament_k=1):
@@ -50,6 +51,7 @@ class SearchSession:
             if type(config[name]) is not int or not 0 <= config[name] < 2 ** 32:
                 raise ValueError(f"{name} must be an integer within 0..2^32-1")
         self.method, self.config, self.smoke = method, config, smoke
+        self.source_fingerprint = source_fingerprint()
         self.evaluator = evaluator or evaluate_task
         self.resume = Path(resume).resolve() if resume else None
         self.replay = []
@@ -80,7 +82,8 @@ class SearchSession:
         self.metadata = {"run_id": self.run_id, "method": method, "schema_version": SCHEMA_VERSION,
                          "dataset_name": self.config["dataset"], "search_space": SEARCH_SPACE, "smoke": smoke, "config": config,
                          "python": platform.python_version(), "platform": platform.platform(),
-                         "versions": versions, "status": "running"}
+                         "versions": versions, "status": "running",
+                         "source_fingerprint": self.source_fingerprint}
         self.metadata.update(resume_version=RESUME_VERSION, trial_path=str(self.trial_path.resolve()),
                              save_dir=str(self.save_dir.resolve()))
         try:
@@ -97,6 +100,8 @@ class SearchSession:
             raise ValueError("Run is incompatible with the current resumable search format")
         if saved["method"] != self.method or saved["config"] != self.config or saved["smoke"] != self.smoke:
             raise ValueError("Resume requires the original method and search configuration")
+        if saved.get("source_fingerprint") != self.source_fingerprint:
+            raise ValueError("Source files changed; use the original implementation to resume")
 
     def _load_trials(self):
         raw = self.trial_path.read_bytes()
@@ -277,6 +282,7 @@ class SearchSession:
             raise RuntimeError("No valid candidate was evaluated; inspect trial failures")
         result = {"run_id": self.run_id, "method": self.method, "schema_version": SCHEMA_VERSION,
                   "dataset_name": self.config["dataset"], "search_space": SEARCH_SPACE, "smoke": self.smoke,
+                  "source_fingerprint": self.source_fingerprint,
                   "winner_policy": "best_observed_validation_accuracy",
                   "best_chromosome": self.best["chromosome"], "best_arch": self.best["arch"],
                   "best_fitness": self.best["fitness"], "best_validation_loss": self.best.get("validation_loss"), "best_trial_id": self.best["trial_id"],
@@ -310,7 +316,7 @@ def resume_search(metadata_path, evaluator=None):
     path = Path(metadata_path).resolve()
     saved = json.loads(path.read_text(encoding="utf-8"))
     if saved.get("resume_version") != RESUME_VERSION:
-        raise ValueError("This run predates resumable search; start a new run")
+        raise ValueError("This run predates source-verified recovery; use its original implementation")
     config = saved["config"].copy()
     budget = config.pop("evaluation_budget")
     config.pop("injected_evaluator")

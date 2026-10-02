@@ -12,6 +12,7 @@ from models.baselines.random_nas import run_random_search
 from utils.search_runtime import validate_budget
 from ga.chromosome import SCHEMA_VERSION
 from utils.persistence import atomic_json, RunLock
+from utils.provenance import source_fingerprint
 
 
 def compare(methods, seeds, budget=300, population=20, proxy_epochs=20, device="cpu",
@@ -36,15 +37,18 @@ def compare(methods, seeds, budget=300, population=20, proxy_epochs=20, device="
                            "device": device, "max_params": max_params, "full_epochs": full_epochs},
                 "budget_kind": "candidate_evaluations", "evaluation_budget": budget,
                 "smoke": smoke, "split_seed": split_seed, "search_seeds": list(seeds),
-                "full_training_seeds": list(full_seeds), "runs": [], "status": "running", "resume_version": 1}
+                "full_training_seeds": list(full_seeds), "runs": [], "status": "running", "resume_version": 2,
+                "source_fingerprint": source_fingerprint()}
     path = root / "comparison.json"
     lock = RunLock(path.with_suffix(".lock"))
     lock.acquire()
     if resume:
         try:
             saved = json.loads(Path(resume).read_text(encoding="utf-8"))
-            if saved.get("resume_version") != 1:
-                raise ValueError("Comparison predates resumable comparisons")
+            if saved.get("resume_version") != 2:
+                raise ValueError("Comparison predates source-verified recovery; use its original implementation")
+            if saved.get("source_fingerprint") != manifest["source_fingerprint"]:
+                raise ValueError("Source files changed; use the original implementation to resume the comparison")
             for key in ("dataset_name", "schema_version", "config", "evaluation_budget", "smoke",
                         "split_seed", "search_seeds", "full_training_seeds"):
                 if saved[key] != manifest[key]:
@@ -61,6 +65,8 @@ def compare(methods, seeds, budget=300, population=20, proxy_epochs=20, device="
         save()
         for seed in seeds:
             for method in methods:
+                if source_fingerprint() != manifest["source_fingerprint"]:
+                    raise ValueError("Source files changed during the comparison; restore its original implementation")
                 directory = root / method / str(seed)
                 common = dict(device=device, proxy_epochs=proxy_epochs, seed=seed, split_seed=split_seed,
                               proxy_size=proxy_size, dataset=dataset, validation_size=validation_size, smoke=smoke, max_params=max_params,

@@ -10,6 +10,7 @@ from training.evaluator import validate
 from utils.reproducibility import set_training_seed
 from utils.search_runtime import resolve_device
 from utils.persistence import atomic_json
+from utils.provenance import source_fingerprint
 
 
 def train_winner(winner_path, device="cpu", epochs=FULL_EPOCHS, seed=42,
@@ -49,6 +50,7 @@ def train_model(model, device, epochs, save_dir, run_id, seed, split_seed,
                 evaluate_test=True, metadata=None, dataset="breast_cancer_wisconsin"):
     from models.mlp import count_parameters
     from data.tabular import get_full_loaders, dataset_metadata
+    source = source_fingerprint()
     if epochs < 1:
         raise ValueError("Full-training epochs must be positive")
     from data.specs import dataset_spec
@@ -110,6 +112,7 @@ def train_model(model, device, epochs, save_dir, run_id, seed, split_seed,
     test_acc = test_metrics["accuracy"] if isinstance(test_metrics, dict) else test_metrics
     results_path = root / f"full_train_{run_id}.json"
     result = {**(metadata or {}), "dataset": dataset_metadata(split_seed, dataset), "run_id": run_id, "seed": seed, "split_seed": split_seed,
+              "source_fingerprint": source,
               "num_params": params, "best_val_accuracy": best_val, "best_val_loss": best_val_loss, "test_accuracy": test_acc,
               "best_val_metrics": best_val_metrics, "test_metrics": test_metrics,
               "history": history, "elapsed_s": time.perf_counter() - started,
