@@ -1,236 +1,150 @@
-# Neural Architecture Search (NAS) with Genetic Algorithms
+# Neural Architecture Search with Genetic Algorithms
 
-[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue?logo=python)](https://www.python.org/)
-[![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-EE4C2C?logo=pytorch)](https://pytorch.org/)
-[![CUDA](https://img.shields.io/badge/CUDA-11.8%2B-76B900?logo=nvidia)](https://developer.nvidia.com/cuda-toolkit)
+A CIFAR-10 research project comparing generational GA, aging evolution, and random search. Candidates are trained from scratch with a common proxy protocol. The aim is to measure whether search history improves architecture selection under a fixed budget.
 
-> **CSE_5022 — Advanced Machine Learning** | Autonomous Deep Learning Architecture Discovery
+## Historical results and their limits
 
-A full-fledged Neural Architecture Search (NAS) system that uses a **Genetic Algorithm (GA)** to automatically discover optimal Convolutional Neural Network (CNN) architectures for image classification on **CIFAR-10**.
+The repository retains these original measurements:
 
----
+| Method | Reported proxy accuracy | Full test accuracy | Parameters |
+| --- | ---: | ---: | ---: |
+| GA-NAS | 72.15% at final generation | 92.07% | 19,061,642 |
+| Random search | 69.90% | 92.15% | 5,605,130 |
+| Fixed ResNet | — | 90.52% | 1,227,594 in the current implementation |
 
-## 🌟 Key Highlights
+These are historical results, not measurements from the revised pipeline. The original GA saved winners using incorrectly aligned population/fitness arrays; the ResNet used a different optimizer and final-epoch checkpoint policy. The main GA log peaked at 73.20%, above its reported final score. A single pair of full-training results does not demonstrate an advantage for either search method. Existing experiment files are preserved for provenance; re-run comparisons before making performance claims about this branch.
 
-- **Autonomous Architecture Design:** Searches across **1,119,744** discrete network configurations without manual intervention.
-- **Adaptive Mutation Rate:** Dynamically scales per-gene mutation from $p_m=0.1$ up to $p_m=0.3$ upon detecting 3 consecutive generations of fitness stagnation.
-- **Multi-GPU Parallelization:** Supports concurrent population evaluation across dual CUDA devices (`cuda:0` and `cuda:1`) via `ThreadPoolExecutor`.
-- **High Performance:** Discovered a 5-block residual CNN that achieved **92.07% Test Accuracy** (19.06M parameters) on full 50-epoch CIFAR-10 convergence.
-- **Comprehensive Benchmarks:** Evaluated against a hand-designed ResNet baseline and a compute-matched 300-evaluation Random Search baseline to empirically analyze the **Proxy Gap**.
+## What changed
 
----
+- Winner selection uses a durable archive of evaluated chromosome/fitness pairs.
+- Every trial records architecture, fitness, status, training seed, split seed, device, parameter count when available, and elapsed time in JSONL.
+- Metadata records configuration, search-space schema, dependency versions, Git revision, actual devices, and completion/failure status.
+- Search randomness uses a private RNG; model training and DataLoader randomness use separate seeds.
+- Parallel search uses one spawned process per GPU, preventing shared global RNG races. Unsupported devices fail before search; one-GPU parallel mode is rejected.
+- Infrastructure/programming failures stop the run. Divergence, CUDA memory exhaustion, and parameter-limit violations are explicit candidate outcomes rather than unexplained zero scores.
+- GA, random winners, and fixed ResNet share Adam, cosine decay, augmentation, dataset splits, and best-validation checkpoint selection for new full-training runs.
+- Smoke results and incompatible saved chromosomes are rejected by full-training commands.
+- Aging evolution, repeated comparisons, proxy-rank calibration, and an optional offline topology benchmark are available.
 
-## 🔄 System Architecture & Search Pipeline
+## Installation and tests
 
-```mermaid
-graph TD
-    A[Start: Initialize 20 Random Chromosomes] --> B[Proxy Evaluation: 5 Epochs on 10k CIFAR Split]
-    B --> C{Diverged / NaN?}
-    C -- Yes --> D[Fitness = 0.0]
-    C -- No --> E[Fitness = Validation Accuracy]
-    D --> F[Log Generation Statistics]
-    E --> F
-    F --> G[Identify Top 2 Elites]
-    G --> H[Tournament Selection: k=5]
-    H --> I[Single-Point Crossover: p=0.8]
-    I --> J[Adaptive Mutation: p=0.1 → 0.3 on stagnation]
-    J --> K[Form Next Generation: Elites + Offspring]
-    K --> L{15 Generations Complete?}
-    L -- No --> B
-    L -- Yes --> M[Full Convergence Training: 50 Epochs on Best Chromosome]
-    M --> N[Save Checkpoints & Render Analytics]
+Use Python 3.10 or newer. Python 3.12 with CPU PyTorch was used for local verification. Install a CUDA-enabled PyTorch build appropriate to your hardware before running GPU experiments; the test environment below is CPU-only.
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python -m unittest discover -s tests -v
 ```
 
----
+`requirements-tested-cpu.txt` records the exact locally tested environment. Install it in a separate virtual environment when reproducing CPU checks. DEAP is not required: evolutionary operators are implemented directly.
 
-## ⚙️ Prerequisites
+Dataset downloads go to `data/cifar10_data/`, which is ignored by Git. The `data` Python package is tracked. CIFAR loading is cached within each evaluation process. Downloads or filesystem failures stop a real search rather than silently assigning every candidate zero fitness.
 
-| Requirement | Minimum Version | Notes |
-| :--- | :---: | :--- |
-| Python | 3.8+ | Tested on 3.10 & 3.12 |
-| PyTorch | 2.0+ | With CUDA support |
-| CUDA Toolkit | 11.8+ | For GPU evaluation |
-| GPU VRAM | 8 GB+ per card | Tested on dual RTX 4060 |
-| RAM | 16 GB+ | For DataLoader workers |
+## Search methods
 
----
+```powershell
+# GA plumbing check: random scores, no model training or dataset download
+python main.py --smoke --pop 5 --gen 2 --log-dir experiments/comparisons/smoke --save-dir experiments/comparisons/smoke
 
-## 📁 Repository Structure
+# Generational GA: 20 x 15 = 300 candidate evaluations
+python main.py --pop 20 --gen 15 --device cuda --seed 42 --split-seed 42
 
-```
-.
-├── ga/                     # Evolutionary Algorithm Engine
-│   ├── chromosome.py       # 13-gene search space encoding & decoding
-│   ├── operators.py        # Tournament selection, crossover, adaptive mutation
-│   ├── population.py       # Population initialization & ranking helpers
-│   └── engine.py           # Main GA execution loop with stagnation tracking
-│
-├── models/                 # Dynamic Model Construction & Baselines
-│   ├── builder.py          # Dynamic PyTorch CNN builder (ConvBlock, ResidualBlock)
-│   └── baselines/
-│       ├── resnet.py       # Hand-crafted 3-block ResNet baseline (~2.79M params)
-│       └── random_nas.py   # Compute-matched Random Search baseline (300 evals)
-│
-├── training/               # Data Loading & Training Pipelines
-│   ├── config.py           # Search space & training hyperparameter constants
-│   ├── evaluator.py        # 5-epoch proxy training & fitness scoring
-│   └── trainer.py          # 50-epoch full convergence training with Cosine LR
-│
-├── utils/                  # Logging & Analytics Visualizer
-│   ├── logger.py           # CSV generation logger
-│   └── visualiser.py       # Plotting utilities for convergence, heatmaps & diagrams
-│
-├── experiments/            # Auto-generated Experimental Analytics
-│   ├── ablations/          # Genetic operator ablation logs & comparison plots
-│   ├── sweep/              # Hyperparameter sensitivity sweep logs & heatmaps
-│   ├── generation_logs/    # Generation CSV logs & convergence curves
-│   └── best_architectures/ # Winning chromosome JSON configs & architecture plots
-│
-├── main.py                 # Primary CLI entry point
-├── evaluate_best.py        # Standalone full training script for winning chromosome
-├── run_ablations.py        # Ablation study runner (5 configurations × 10 generations)
-├── run_hyper_sweep.py      # Population vs Proxy Epoch sensitivity sweeper (3×3 grid)
-├── train_random_best.py    # Standalone full trainer for random search winner
-├── demo_replay.py          # Replay & visualize a saved GA run from CSV logs
-├── requirements.txt        # Python dependency manifest
-└── README.md               # Project documentation
+# Aging evolution: mutate one active choice, evaluate child, remove oldest member
+python main.py --mode aging --pop 20 --n-eval 300 --device cuda --seed 42
+
+# Persisted random-search winner using the same proxy evaluator
+python main.py --mode random-search --n-eval 300 --device cuda --seed 42
+
+# Concurrent evaluation on all available GPUs
+python main.py --pop 20 --gen 15 --device cuda --parallel
 ```
 
----
+GA defaults: tournament size 5, two elites, crossover probability 0.8, per-gene mutation 0.1. After three generations without a new observed maximum, mutation doubles to 0.2 at these defaults (cap 0.3), then resets when improvement resumes. Elites are retrained, and those evaluations consume budget; old weights are not inherited. Best-observation selection can favor lucky training outcomes, so repeat finalist training before drawing conclusions.
 
-## 📊 Empirical Results & Baseline Comparison
+Aging evolution uses tournament size 5 and FIFO replacement. Its mutation changes one expressed gene to a different value, avoids unused filter genes, and treats average/mixed pooling as equivalent when choosing a pooling mutation. It retains an independent history even after population members age out. Its initial population can be evaluated in parallel; subsequent children are evaluated one at a time to preserve the sequential algorithm.
 
-We evaluated our evolved **GA-NAS** model against a hand-designed 3-block ResNet baseline and a compute-matched Random Search baseline (300 total evaluations):
+`--max-params 6000000` applies a common optional parameter ceiling to each search method. Rejected candidates count as attempted evaluations and are explicitly logged. If no valid candidate is found, the run fails without exporting a winner.
 
-| Method / Baseline | Proxy Validation Accuracy (5 Epochs) | Full Test Accuracy (50 Epochs) | Trainable Parameters | Search Strategy / Budget |
-| :--- | :---: | :---: | :---: | :--- |
-| **GA-NAS (Ours)** | **72.15%** | **92.07%** | **19,061,642 (~19.06M)** | Evolutionary (15 Gen × 20 Pop = 300 evals) |
-| **Random Search** | 69.90% | 92.15% | 5,605,130 (~5.61M) | Random sampling (300 random evaluations) |
-| **Hand-designed ResNet** | — | 90.52% | 2,789,962 (~2.79M) | Manual design (3-block baseline) |
+Smoke fitness depends on trial seeds rather than architecture quality. Equal smoke budgets/seeds can therefore produce equal best scores across methods; smoke comparisons test plumbing only.
 
-### 📈 Baseline Accuracy Comparison
-![Baseline Comparison](experiments/final_comparison.png)
+## Repeated comparisons
 
----
+```powershell
+# Quick check: all three methods, seven evaluations each, two search seeds
+python run_comparison.py --smoke --budget 7 --population 3 --seeds 42 43
 
-## 🔬 Scientific Findings: The Proxy Gap & Design Choices
+# Real search pilot with identical candidate-evaluation budgets
+python run_comparison.py --device cuda --budget 300 --population 20 --seeds 42 43 44
 
-### The Proxy Gap Phenomenon
-During the proxy search phase, the GA selected the strongest candidate by short-horizon fitness, achieving **72.15%** proxy accuracy vs. Random Search's **69.90%**. When both were trained to full convergence (50 epochs, 50k samples), the Random Search model reached **92.15%** while GA-NAS achieved **92.07%** — a mere 0.08% difference.
-
-This empirically confirms the **Proxy Gap** in NAS literature: 5-epoch training on a 10k subset acts as a *directionally correct but noisy* fitness signal. Architectures that converge fast under data-scarce, low-epoch conditions are not guaranteed to be those with the highest asymptotic accuracy. The true ranking of architectures can invert under full training conditions.
-
-### Discovered Architectural Innovations
-The GA autonomously recovered several design principles from first principles:
-- **Residual connections** (`use_residual=True`) — selected consistently for deep architectures without any human guidance
-- **Bottleneck filter progression** `[64, 128, 128, 1024, 512]` — aggressive channel expansion at Block 4 before classification compression, mirroring ResNet-50 and EfficientNet design philosophy
-- **LeakyReLU over ReLU** — prevents the dead neuron problem through many deep residual layers
-- **Zero dropout** — implicit regularisation from BatchNorm + residual gradient shortcuts is sufficient
-
----
-
-## 🧪 Ablation Study: Genetic Component Contributions
-
-To isolate the impact of each evolutionary component, we ran 5 configurations for 10 generations each (population = 20):
-
-| Configuration | Final Best Proxy Fitness (Gen 10) | Key Observation |
-| :--- | :---: | :--- |
-| **Full GA-NAS (Baseline)** | `0.6705` | Balanced exploration/exploitation ($P=20, G=10, p_c=0.8, p_m=0.1$) |
-| **No Crossover ($p_c=0.0$)** | `0.7425` | Mutation-only exploration reached high-performing regions faster |
-| **No Mutation ($p_m=0.0$)** | `0.7215` | Crossover dominated early convergence; stalled without gene renewal |
-| **No Elitism ($N_{\text{elites}}=0$)** | `0.7095` | Moderate performance; top models could be lost between generations |
-| **Small Population ($P=10$)** | `0.6805` | Consistent underperformer — restricted initial genetic diversity |
-
-### 📉 Ablation Comparison Plot
-![Ablation Comparison](experiments/ablations/ablation_comparison.png)
-
----
-
-## 🎛️ Hyperparameter Sensitivity Analysis
-
-We evaluated search performance across varying population sizes ($P \in \{10, 20, 30\}$) and proxy epoch durations ($E \in \{3, 5, 8\}$), measuring best proxy accuracy at Generation 5:
-
-| | $E=3$ epochs | $E=5$ epochs | $E=8$ epochs |
-| :---: | :---: | :---: | :---: |
-| **$P=10$** | ~0.60 | ~0.70 | ~0.74 |
-| **$P=20$** | ~0.62 | **0.7175** ✓ | **0.7635** |
-| **$P=30$** | ~0.63 | ~0.71 | ~0.76 |
-
-Our selected config ($P=20$, $E=5$, proxy acc = **0.7175**) sits at the **computational efficiency frontier** — increasing to 8 proxy epochs yields only +4.6pp accuracy at ~60% greater compute cost per generation.
-
-### 🌡️ Hyperparameter Heatmap
-![Hyperparameter Heatmap](experiments/sweep/hyperparam_heatmap.png)
-
----
-
-## 🧬 Evolved Architecture Visual Diagram
-
-![Evolved Architecture](experiments/best_architectures/architecture.png)
-
----
-
-## 🚀 Quick Start Guide
-
-### 1. Install Dependencies
-```bash
-pip install -r requirements.txt
+# Repeat each winner's full training; validation only, without test evaluation
+python run_comparison.py --device cuda --budget 300 --population 20 --seeds 42 43 44 --full-epochs 50 --full-seeds 101 102
 ```
 
-### 2. Smoke Test (CPU — sanity check, ~30 seconds)
-```bash
-python main.py --smoke --pop 5 --gen 2
+Each invocation creates a unique directory under `experiments/comparisons/`, with a comparison manifest and per-method/per-seed trials and winners. The manifest reports proxy mean/sample standard deviation, full-validation statistics when requested, search wall time, and summed candidate evaluation time. A single-search standard deviation is `null` rather than misleadingly zero.
+
+The primary budget is candidate evaluations, not equal GPU compute. Model sizes differ; parameter rejection has a different cost from training. Use recorded evaluation times and hardware allocation to assess compute efficiency. `total_evaluation_seconds` is summed evaluator wall time, not a measurement of GPU utilization. Do not select a method by repeatedly inspecting test scores. Choose and freeze the comparison using validation, then perform explicit final test evaluations.
+
+## Full training and final test evaluation
+
+```powershell
+# Any saved GA/aging/random winner; 45k train, 5k validation
+python evaluate_best.py --json path/to/best_run.json --device cuda --epochs 50 --seed 101 --validation-only
+
+# Fixed ResNet with the same new training/checkpoint policy
+python main.py --mode train-resnet --device cuda --full-epochs 50 --seed 101 --validation-only
+
+# Evaluate a frozen checkpoint on the official test set once
+python evaluate_best.py --test-checkpoint path/to/full_train_run.json --device cuda
 ```
 
-### 3. Run Full GA Search
-```bash
-# Single GPU:
-python main.py --pop 20 --gen 15 --proxy-epochs 5 --device cuda
+Omitting `--validation-only` in standalone full-training commands evaluates test accuracy after loading the best validation checkpoint. Comparison and calibration runners always request validation-only training. Checkpoints save unwrapped model weights, allowing a different device count when loading. `--parallel` opts into full-training DataParallel; use the same choice across baseline methods.
 
-# Dual GPU (parallel population evaluation across cuda:0 and cuda:1):
-python main.py --pop 20 --gen 15 --proxy-epochs 5 --device cuda --parallel
+The standalone random-winner trainer now accepts the same arguments as `evaluate_best.py`, including `--json`; it no longer embeds a historical chromosome. Newest-file discovery skips marked smoke and incompatible records. Ten-gene legacy results require an explicit migration by architectural field name; they are not padded or silently reinterpreted. Thirteen-gene legacy files can load if chromosome and architecture agree, but their missing experiment provenance still limits reproducibility.
+
+## Validate the proxy before tuning search
+
+```powershell
+python calibrate_proxy.py --device cuda --samples 12 --seeds 101 102 --proxy-epochs 5 --long-epochs 20
 ```
 
-### 4. Full-Train the Discovered Winner
-```bash
-python evaluate_best.py --device cuda --epochs 50
+This samples distinct effective architectures, evaluates each with the proxy and longer training under repeated seeds, and reports Spearman rank correlation and top-k shortlist overlap. Average ranks handle ties. Constant scores produce an undefined (`null`) correlation. Candidate failures are retained; only architectures with complete paired repeats contribute to the aggregate ranking. Longer-training accuracy is a reference protocol, not proof of asymptotic convergence. No test evaluation is performed. The command can be expensive; choose samples/epochs according to available compute.
+
+## Cheap offline topology experiments
+
+NAS-Bench-201 is now maintained through [NATS-Bench](https://github.com/D-X-Y/NATS-Bench). The optional adapter uses its topology search space (`tss`) and a local benchmark file or unpacked simple archive:
+
+```powershell
+python -m pip install -r requirements-benchmark.txt
+python benchmark_search.py --benchmark path/to/NATS-tss-v1_0-3ffb9-simple --budget 300 --population 20 --seeds 0 1 2 3 4
 ```
 
-### 5. Run Baselines & Ablations
-```bash
-# Random Search baseline (300 evaluations, same compute budget as GA):
-python main.py --mode random-search --n-eval 300 --device cuda
+Download the benchmark data using the official repository instructions; the adapter does not download multi-gigabyte archives automatically. It applies the search policies to six cell-edge choices rather than the project's 13-gene CNN space. It uses mean stored CIFAR-10 validation accuracy (`cifar10-valid`) and records simulated training time. It does not use stored test scores for selection. Mean stored scores remove much of the evaluator noise, so these experiments do not reproduce noisy live training. Benchmark results must be validated in the real project before claiming transfer. The local adapter tests use a synthetic table; the full benchmark archive was not available during verification.
 
-# Hand-designed ResNet baseline:
-python main.py --mode train-resnet --device cuda --full-epochs 50
+## Ablations, sweeps, and figures
 
-# Genetic Operator Ablation Suite (5 configs × 10 generations):
-python run_ablations.py
-
-# Hyperparameter Sensitivity Sweep (3×3 population × proxy-epoch grid):
-python run_hyper_sweep.py
+```powershell
+python run_ablations.py --device cuda --budget 200 --seeds 42 43 44
+python run_hyper_sweep.py --device cuda --budget 150 --seeds 42 43 44
+python demo_replay.py --csv experiments/generation_logs/run_example.csv
+python generate_comparison.py --results path/to/ga_full.json path/to/random_full.json --labels GA Random --metric best_val_accuracy --out experiments/comparisons/validation.png
 ```
 
-### 6. Replay a Saved GA Run
-```bash
-# Visualize and replay fitness curves from saved CSV generation logs:
-python demo_replay.py
-```
+Ablations use equal candidate-evaluation budgets even for the smaller population. Sweeps preserve evaluation counts while varying proxy training epochs, so they do not have equal training compute or identical measurement protocols. Both preserve repeated seeds and results in unique directories. Comparison figures read supplied measured JSON files; values are not hardcoded. Newly generated architecture diagrams show all five actual widths, residual block summaries, and an unclipped classifier output. Older figures remain historical artifacts.
 
----
+## Search space and limitations
 
-## 📚 References
+The thirteen genes cover depth (2–5 blocks), five filter widths, kernel size, block activation, dropout, normalization, classifier width, pooling, and a global residual toggle. The current space has **839,808 genotypes** and **207,360 effective model configurations** after accounting for unused filter genes and duplicate average/mixed pooling. Genotype sampling remains compatible with the original space: it samples depth uniformly and gives average-style pooling two encoded choices. All search methods share that distribution.
 
-- He, K., Zhang, X., Ren, S., & Sun, J. (2016). *Deep Residual Learning for Image Recognition.* CVPR.
-- Pham, H., Guan, M., Zoph, B., Le, Q., & Dean, J. (2018). *Efficient Neural Architecture Search via Parameter Sharing.* ICML. (ENAS)
-- Liu, H., Simonyan, K., & Yang, Y. (2019). *DARTS: Differentiable Architecture Search.* ICLR.
-- Real, E. et al. (2019). *Regularized Evolution for Image Classifier Architecture Search.* AAAI. (AmoebaNet)
-- Zoph, B., & Le, Q. V. (2017). *Neural Architecture Search with Reinforcement Learning.* ICLR.
-- Goldberg, D. E. (1989). *Genetic Algorithms in Search, Optimization and Machine Learning.* Addison-Wesley.
-- Fortin, F.-A. et al. (2012). *DEAP: Evolutionary Algorithms Made Easy.* JMLR.
+The classifier uses ReLU and produces logits. Networks downsample after every block. Residual locations, arbitrary graph topology, depthwise convolutions, and attention are not searched in the live CNN space. Wider networks can be expensive; there is no default latency objective. Fixed deterministic settings improve repeatability within an environment, but do not guarantee identical results across PyTorch versions, devices, or hardware. CUDA/multi-GPU execution still requires hardware-specific validation.
 
----
+Trial records survive failures, but interrupted search and training are not resumable in this version. Candidate re-evaluations are charged and retained rather than cached. The historical result archive contains multiple schemas and does not gain correctness merely because the current code is fixed.
 
-## 📄 License
+## References
 
-This project is licensed under the Apache License 2.0 — see the [LICENSE](LICENSE) file for details.
+- [Random Search and Reproducibility for Neural Architecture Search](https://proceedings.mlr.press/v115/li20c.html)
+- [Regularized Evolution for Image Classifier Architecture Search](https://arxiv.org/abs/1802.01548)
+- [Best Practices for Scientific Research on Neural Architecture Search](https://arxiv.org/abs/1909.02453)
+- [NAS-Bench-201](https://arxiv.org/abs/2001.00326) and [NATS-Bench](https://github.com/D-X-Y/NATS-Bench)
+
+Apache License 2.0; see [LICENSE](LICENSE).
