@@ -3,6 +3,7 @@ import hashlib
 import json
 from pathlib import Path
 import shutil
+import tempfile
 import time
 
 import numpy as np
@@ -11,7 +12,7 @@ import torch
 from data.specs import dataset_spec
 from ga.chromosome import SCHEMA_VERSION, decode
 from models.mlp import build_model
-from utils.persistence import atomic_json
+from utils.persistence import atomic_json, RunLock
 
 
 def feature_names(dataset):
@@ -34,9 +35,33 @@ def export_artifact(results_path, destination, example_path=None):
     spec = dataset_spec(dataset["name"])
     if (dataset["input_features"], dataset["num_classes"]) != (spec["input_features"], spec["num_classes"]):
         raise ValueError("Training dataset dimensions are inconsistent")
-    destination = Path(destination)
-    destination.mkdir(parents=True, exist_ok=False)
-    weights = destination / "model.pt"
+    destination = Path(destination).resolve()
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    lock = RunLock(destination.with_name(f".{destination.name}.export.lock"))
+    lock.acquire()
+    try:
+        if destination.exists():
+            raise FileExistsError(f"Artifact destination already exists: {destination}")
+        # A same-parent rename publishes the complete directory after verification.
+        # Only this unique temporary directory is removed on failure, never a user artifact.
+        with tempfile.TemporaryDirectory(prefix=f".{destination.name}.export-", dir=destination.parent) as temporary:
+            staging = Path(temporary).resolve()
+            if staging.parent != destination.parent:
+                raise RuntimeError("Export staging directory escaped its destination parent")
+            manifest = _write_export(source, staging, example_path)
+            Predictor(staging)
+            if destination.exists():
+                raise FileExistsError(f"Artifact destination appeared during export: {destination}")
+            staging.rename(destination)
+        return manifest
+    finally:
+        lock.release()
+
+
+def _write_export(source, staging, example_path):
+    dataset = source["dataset"]
+    spec = dataset_spec(dataset["name"])
+    weights = staging / "model.pt"
     shutil.copyfile(source["checkpoint_path"], weights)
     labels = ["malignant", "benign"] if dataset["name"] == "breast_cancer_wisconsin" else [
         "Spruce/Fir", "Lodgepole Pine", "Ponderosa Pine", "Cottonwood/Willow",
@@ -51,15 +76,15 @@ def export_artifact(results_path, destination, example_path=None):
                 "weights_sha256": hashlib.sha256(weights.read_bytes()).hexdigest(),
                 "data_sha256": dataset["data_sha256"], "split_seed": source["split_seed"],
                 "training_seed": source["seed"], "num_params": source["num_params"],
+                "source_fingerprint": source.get("source_fingerprint"),
                 "example_available": example_path is not None,
                 "validation_metrics": source.get("best_val_metrics"), "test_metrics": source.get("test_metrics"),
                 "input_contract": "Raw unscaled numeric features in feature_names order; no missing values"}
-    atomic_json(destination / "manifest.json", manifest)
-    predictor = Predictor(destination)  # Verify weights, dimensions, and preprocessing.
     if example_path:
         example = json.loads(Path(example_path).read_text(encoding="utf-8"))
-        predictor.transform(example["features"])
-        atomic_json(destination / "example.json", example)
+        atomic_json(staging / "example.json", example)
+        manifest["example_sha256"] = hashlib.sha256((staging / "example.json").read_bytes()).hexdigest()
+    atomic_json(staging / "manifest.json", manifest)
     return manifest
 
 
@@ -93,6 +118,20 @@ class Predictor:
         self.model = build_model(m["arch"], m["input_features"], m["num_classes"])
         self.model.load_state_dict(torch.load(weights, map_location="cpu", weights_only=True))
         self.model.to(self.device).eval()
+        if m.get("example_available"):
+            example_path = root / "example.json"
+            if not example_path.is_file():
+                raise ValueError("Artifact promises an example but example.json is missing")
+            if m.get("example_sha256") and hashlib.sha256(example_path.read_bytes()).hexdigest() != m["example_sha256"]:
+                raise ValueError("Artifact example checksum differs")
+            example = json.loads(example_path.read_text(encoding="utf-8"))
+            if not isinstance(example, dict) or set(example) != {"features"}:
+                raise ValueError("Artifact example must contain only features")
+            rows = example["features"]
+            if (not isinstance(rows, list) or any(not isinstance(row, list) for row in rows)
+                    or any(type(value) not in (int, float) for row in rows for value in row)):
+                raise ValueError("Artifact example features must be numeric rows")
+            self.transform(rows)
 
     def transform(self, rows):
         raw = np.asarray(rows, dtype=np.float64)
