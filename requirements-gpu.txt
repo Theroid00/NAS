@@ -1,0 +1,4 @@
+# CUDA 13.0 build used for the RTX 4060 benchmark; requires a compatible NVIDIA driver.
+--extra-index-url https://download.pytorch.org/whl/cu130
+-r requirements.txt
+torch==2.14.1+cu130

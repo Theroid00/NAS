@@ -1,0 +1,137 @@
+{
+  "purpose": "RTX 4060 GPU execution and timing pilot; one search seed is insufficient to rank algorithms",
+  "dataset_name": "breast_cancer_wisconsin",
+  "schema_version": 3,
+  "git_commit": "b2d1d1bb4c5aa2ca9d7eb0f5adea1bd11333d749",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "versions": {
+    "torch": "2.14.1+cu130",
+    "scikit-learn": "1.9.1",
+    "numpy": "2.5.2"
+  },
+  "hardware": {
+    "gpu_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "memory_bytes": 8585216000,
+    "cuda_runtime": "13.0",
+    "driver_version": "610.74"
+  },
+  "config": {
+    "methods": [
+      "ga",
+      "aging",
+      "random"
+    ],
+    "population": 10,
+    "proxy_epochs": 10,
+    "proxy_size": 0,
+    "device": "cuda",
+    "max_params": null,
+    "full_epochs": 30,
+    "seeds": [
+      42
+    ],
+    "split_seed": 42,
+    "evaluation_budget_per_method": 20,
+    "full_seeds": [
+      101
+    ]
+  },
+  "search_total_elapsed_s": 21.400110399999903,
+  "total_candidate_evaluation_seconds": 16.587816899995232,
+  "full_training_total_elapsed_s": 4.115626300001168,
+  "test_evaluated": false,
+  "trial_devices_verified": [
+    "cuda:0"
+  ],
+  "summary": {
+    "ga": {
+      "n_searches": 1,
+      "proxy_mean": 0.9824561403508771,
+      "proxy_std": null,
+      "mean_search_elapsed_s": 11.03099309999925,
+      "full_validation_mean": 0.9912280701754386,
+      "full_validation_std": null
+    },
+    "aging": {
+      "n_searches": 1,
+      "proxy_mean": 0.9824561403508771,
+      "proxy_std": null,
+      "mean_search_elapsed_s": 5.707562400000825,
+      "full_validation_mean": 0.9912280701754386,
+      "full_validation_std": null
+    },
+    "random": {
+      "n_searches": 1,
+      "proxy_mean": 0.9824561403508771,
+      "proxy_std": null,
+      "mean_search_elapsed_s": 4.661554899999828,
+      "full_validation_mean": 0.9912280701754386,
+      "full_validation_std": null
+    }
+  },
+  "runs": [
+    {
+      "method": "ga",
+      "evaluation_count": 20,
+      "search_elapsed_s": 11.03099309999925,
+      "total_evaluation_seconds": 6.303972999996404,
+      "best_proxy_accuracy": 0.9824561403508771,
+      "full_training_elapsed_s": 1.375165700001162,
+      "full_validation_accuracy": 0.9912280701754386,
+      "winner_parameters": 15026,
+      "winner_architecture": {
+        "num_layers": 4,
+        "width_1": 32,
+        "width_2": 128,
+        "width_3": 64,
+        "width_4": 16,
+        "activation": "relu",
+        "dropout": 0.3,
+        "layer_norm": true,
+        "use_residual": true
+      }
+    },
+    {
+      "method": "aging",
+      "evaluation_count": 20,
+      "search_elapsed_s": 5.707562400000825,
+      "total_evaluation_seconds": 5.661895899998854,
+      "best_proxy_accuracy": 0.9824561403508771,
+      "full_training_elapsed_s": 1.3563904000002367,
+      "full_validation_accuracy": 0.9912280701754386,
+      "winner_parameters": 15026,
+      "winner_architecture": {
+        "num_layers": 4,
+        "width_1": 32,
+        "width_2": 128,
+        "width_3": 64,
+        "width_4": 16,
+        "activation": "relu",
+        "dropout": 0.3,
+        "layer_norm": true,
+        "use_residual": true
+      }
+    },
+    {
+      "method": "random",
+      "evaluation_count": 20,
+      "search_elapsed_s": 4.661554899999828,
+      "total_evaluation_seconds": 4.621947999999975,
+      "best_proxy_accuracy": 0.9824561403508771,
+      "full_training_elapsed_s": 1.384070199999769,
+      "full_validation_accuracy": 0.9912280701754386,
+      "winner_parameters": 15026,
+      "winner_architecture": {
+        "num_layers": 4,
+        "width_1": 32,
+        "width_2": 128,
+        "width_3": 64,
+        "width_4": 16,
+        "activation": "relu",
+        "dropout": 0.3,
+        "layer_norm": true,
+        "use_residual": true
+      }
+    }
+  ]
+}

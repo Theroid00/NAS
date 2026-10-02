@@ -15,7 +15,7 @@ python -m pip install -r requirements.txt
 python -m unittest discover -s tests -v
 ```
 
-`requirements-tested-cpu.txt` pins the locally tested CPU environment used by CI. For the remote RTX 4060, install a CUDA-capable PyTorch build using the [official installer](https://pytorch.org/get-started/locally/) and use `--device cuda`. The CPU lock file installs CPU-only PyTorch. CPU is the default; these tiny models may run faster on CPU because GPU launch and transfer overhead can dominate. Measure both on your laptop before choosing.
+`requirements-tested-cpu.txt` pins the locally tested CPU environment used by CI. For the RTX 4060 with a CUDA 13.0-compatible NVIDIA driver, use `python -m pip install -r requirements-gpu.txt`, then `--device cuda`. Confirm access with `python -c "import torch; print(torch.__version__, torch.cuda.is_available(), torch.cuda.get_device_name(0))"`. For other drivers/platforms, use the [official installer](https://pytorch.org/get-started/locally/). The CPU lock file installs CPU-only PyTorch. CPU is the default; these tiny models may run faster on CPU because GPU launch and transfer overhead can dominate. Measure both on your laptop before choosing.
 
 ## Run comparisons
 
@@ -40,6 +40,12 @@ Use `--smoke` for orchestration checks with generated scores. Smoke records are 
 Measured local CPU pilot: 60 evaluations at 10 proxy epochs took **9.42 seconds** summed across searches; three 30-epoch winner retrainings took **1.18 seconds** summed across training runs. These exclude Python process startup and were measured with CPU-only PyTorch and one training thread. All three methods tied at 98.25% proxy validation accuracy. See `docs/tabular-pilot.json` for the configuration and measured results. This one-seed pilot checks execution and runtime; it does not establish a winning search method or an RTX 4060 runtime.
 
 Using the warm pilot evaluation cost, the 900-evaluation/20-epoch command above is roughly **3–6 minutes on this local CPU**, including final retraining. Treat that as an extrapolation; architecture distribution, hardware, and GPU overhead can change it. The default 2,700-evaluation comparison costs approximately three times as much for search.
+
+Measured RTX 4060 Laptop GPU pilot with the same budget and epochs: **21.40 seconds** across the three searches plus **4.12 seconds** across three winner retrainings. All 60 candidates ran on `cuda:0` with valid outcomes. All methods tied at 98.25% proxy validation accuracy and 99.12% after retraining (training seed 101). Test data was not scored. GPU search was slower than this CPU pilot for these tiny models; this does not imply that CPU will outperform GPU on larger workloads. The one-time CUDA package installation and Python process startup are excluded. See `docs/tabular-gpu-pilot.json` for hardware, configuration, versions, and results.
+
+```powershell
+python run_comparison.py --device cuda --budget 20 --population 10 --seeds 42 --proxy-epochs 10 --full-epochs 30 --full-seeds 101
+```
 
 ## Search space and fairness
 
