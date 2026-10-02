@@ -18,9 +18,13 @@ class GenerationLogger:
         "best_chromosome", "elapsed_s",
     ]
 
-    def __init__(self, log_dir: str, run_id: str):
+    def __init__(self, log_dir: str, run_id: str, resume=False):
         os.makedirs(log_dir, exist_ok=True)
         self.path = os.path.join(log_dir, f"run_{run_id}.csv")
+        self._previous = {}
+        if resume and os.path.exists(self.path):
+            with open(self.path, newline="") as stream:
+                self._previous = {row["gen"]: row for row in csv.DictReader(stream)}
         self._file = open(self.path, "w", newline="")
         self._writer = csv.DictWriter(self._file, fieldnames=self.COLUMNS)
         self._writer.writeheader()
@@ -45,6 +49,9 @@ class GenerationLogger:
             "best_chromosome": chromosome_to_str(best_chromosome),
             "elapsed_s": round(elapsed, 2),
         }
+        previous = self._previous.get(str(gen))
+        if previous and all(str(row[key]) == previous[key] for key in self.COLUMNS if key != "elapsed_s"):
+            row["elapsed_s"] = previous["elapsed_s"]
         self._writer.writerow(row)
         self._file.flush()
 

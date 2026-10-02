@@ -13,7 +13,7 @@ def run_aging_evolution(n_evaluations=300, population_size=20, tournament_k=5,
                        proxy_epochs=20, device="cpu", smoke=False, seed=42, split_seed=42,
                        proxy_size=None, max_params=None,
                        log_dir="experiments/tabular/generation_logs", save_dir="experiments/tabular/best_architectures",
-                       evaluator=None, dataset="breast_cancer_wisconsin", validation_size=None):
+                       evaluator=None, dataset="breast_cancer_wisconsin", validation_size=None, resume=None):
     validate_budget(n_evaluations, proxy_epochs, population_size, tournament_k)
     from data.specs import search_sizes
     proxy_size, validation_size = search_sizes(dataset, proxy_size, validation_size)
@@ -26,8 +26,8 @@ def run_aging_evolution(n_evaluations=300, population_size=20, tournament_k=5,
                   mutation_policy="one_active_choice", replacement_policy="oldest_first")
     rng = random.Random(seed)
     population = deque()
-    with SearchSession("aging", config, log_dir, save_dir, smoke, evaluator) as session:
-        logger = GenerationLogger(log_dir, session.run_id)
+    with SearchSession("aging", config, log_dir, save_dir, smoke, evaluator, resume) as session:
+        logger = GenerationLogger(session.log_dir, session.run_id, resume=bool(resume))
         try:
             initial = [random_chromosome(rng) for _ in range(population_size)]
             t0 = time.perf_counter()

@@ -9,6 +9,7 @@ from training.config import FULL_EPOCHS, LEARNING_RATE, WEIGHT_DECAY
 from training.evaluator import validate
 from utils.reproducibility import set_training_seed
 from utils.search_runtime import resolve_device
+from utils.persistence import atomic_json
 
 
 def full_train(chromosome=None, device="cpu", epochs=FULL_EPOCHS,
@@ -101,7 +102,7 @@ def train_model(model, device, epochs, save_dir, run_id, seed, split_seed,
                            "weight_decay": WEIGHT_DECAY, "epochs": epochs, "batch_size": train_loader.batch_size,
                            "train_samples": len(train_loader.dataset), "validation_samples": len(val_loader.dataset),
                            "checkpoint_policy": "best_validation", "device": primary}}
-    results_path.write_text(json.dumps(result, indent=2), encoding="utf-8")
+    atomic_json(results_path, result)
     return result
 
 

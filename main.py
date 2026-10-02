@@ -21,6 +21,7 @@ def parse_args(argv=None):
     p.add_argument("--n-eval", type=int, default=300)
     p.add_argument("--max-params", type=int)
     p.add_argument("--best-json")
+    p.add_argument("--resume", help="Search metadata JSON; restores the saved method and all search settings")
     p.add_argument("--full-epochs", type=int, default=100)
     p.add_argument("--validation-only", action="store_true")
     p.add_argument("--smoke", action="store_true")
@@ -38,7 +39,11 @@ def main():
                   proxy_size=args.proxy_size, dataset=args.dataset, validation_size=args.validation_size,
                   max_params=args.max_params,
                   log_dir=args.log_dir, save_dir=args.save_dir)
-    if args.mode == "nas":
+    if args.resume:
+        from utils.search_runtime import resume_search
+        result = resume_search(args.resume)
+        args.dataset = result["dataset_name"]
+    elif args.mode == "nas":
         from ga.engine import run_nas
         result = run_nas(population_size=args.pop, n_generations=args.gen,
                          crossover_prob=args.crossover_p, mutation_prob=args.mutation_p,

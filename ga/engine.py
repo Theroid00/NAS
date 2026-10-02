@@ -13,7 +13,7 @@ def run_nas(device="cpu", population_size=20, n_generations=15, proxy_epochs=20,
             log_dir="experiments/tabular/generation_logs",
             save_dir="experiments/tabular/best_architectures", smoke=False, seed=42,
             split_seed=42, proxy_size=None, max_params=None, evaluator=None,
-            evaluation_budget=None, dataset="breast_cancer_wisconsin", validation_size=None):
+            evaluation_budget=None, dataset="breast_cancer_wisconsin", validation_size=None, resume=None):
     budget = evaluation_budget if evaluation_budget is not None else population_size * n_generations
     validate_budget(budget, proxy_epochs, population_size, tournament_k)
     if n_generations < 1 or not 0 <= n_elites <= population_size:
@@ -33,8 +33,8 @@ def run_nas(device="cpu", population_size=20, n_generations=15, proxy_epochs=20,
     rng = random.Random(seed)
     population = init_population(population_size, rng)
     historical_best, stagnant = -1.0, 0
-    with SearchSession("ga", config, log_dir, save_dir, smoke, evaluator) as session:
-        logger = GenerationLogger(log_dir, session.run_id)
+    with SearchSession("ga", config, log_dir, save_dir, smoke, evaluator, resume) as session:
+        logger = GenerationLogger(session.log_dir, session.run_id, resume=bool(resume))
         try:
             generation = 0
             while session.count < budget:
