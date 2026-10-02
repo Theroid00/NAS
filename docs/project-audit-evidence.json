@@ -1,0 +1,221 @@
+{
+  "date": "2026-10-03",
+  "scope": "Source review, independent persisted-record checks, GPU integration; no full benchmark retraining or held-out test evaluation",
+  "source_fingerprint": {
+    "version": 1,
+    "sha256": "39864d96a2eae6bf69b76104d985c7a1bf5f4125858c4ec7b3b48b6dc414961c",
+    "files": {
+      "calibrate_proxy.py": "1d14164470e60182c9f1dfd1d6e364c24cbd537392cb3c5fe057b24448fe2434",
+      "data/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "data/specs.py": "fc7310c80c2af01822213c792256701144e662d8a7372449ba6b56efd883d63d",
+      "data/tabular.py": "fb4e18197454db145a59f1483426a7647054c871112c63e78145c35c45bf9cc9",
+      "evaluate_best.py": "fbe0710712739866d1eac4cb8fb26ba958c358a515e20c66f18d550de0594352",
+      "ga/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "ga/aging.py": "788b26ef974a82caed069b4487096027f325ff6ec25c7855ee2545bcd0502c34",
+      "ga/chromosome.py": "8e07892e522851c424af0c673391c95d4bf5d5f25b47d2f6697f19a451156f13",
+      "ga/engine.py": "d206ef257352cb150e64fd92aaa2c1c62358e5b59770a79c43338f60984a4f50",
+      "ga/operators.py": "d9c4a79cbecd34f91cd8e9e1b7519e981984d1a56e92c44d457bc3dd03cfc67e",
+      "ga/population.py": "d9cfe6666b885d537c81285ffa4b4c20cf1a7a91cd7482ad8bc4d8b69c479bfc",
+      "main.py": "1c9318a43888debd2b781382ba28833480cdf0eb06093f3f6609e3317dc6fd07",
+      "models/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "models/baselines/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "models/baselines/random_nas.py": "cdc9c93e5a49fff3d08355b2ce16657374e74443a2e770b55ceaafd467b2c4f5",
+      "models/mlp.py": "6440cc1905d51c6dcf0198bef5e4148efe952b4e1d5b05f47642128048ea2b8b",
+      "run_ablations.py": "ce59430675d91979f128954b6e826e3149d2af7c3449981a6b752bded19d0ed9",
+      "run_comparison.py": "b78620135729c4164597ac6a963bcc1b6d9b2be1259cf436aa3478350d53d80b",
+      "run_hyper_sweep.py": "c1152bcffd5ad9e9c2e4da78ef97a175f08c9877233e4f9145242d3a9d7fabe5",
+      "training/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "training/config.py": "39f9b6b6d8ce846b87a570d16fbd66a02e5b4d921a88f0d6047255a9dc4df538",
+      "training/evaluator.py": "98a3ae8188b0d1ebf08a5a0667da646d1c7cb5d28f66b5c7ab15f2306a90ae4c",
+      "training/metrics.py": "7e6221b6fcebea1ee7c66efbe984e1fa13392fcf8cbf5ff52f77e36cfadafb2b",
+      "training/trainer.py": "f0770d0d4050d028017c54b8b8a94df32d0a14cac11406c0a7435c6a3443b559",
+      "utils/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "utils/logger.py": "fcdabde3a9c09c20985a3e7b50471817a3a8b2db70e49ed7b13802a23024d4ce",
+      "utils/persistence.py": "a545db8cc534f84e71011890ae38d7ae33b1437772b431c6b08719a928cb70b7",
+      "utils/provenance.py": "7b7bd38a50d27051772507e7dc6293ebd5b2421628f5c9894fd1b2ea4c729851",
+      "utils/reproducibility.py": "f5b35fd89575ea54c61496f7f7490feb2c4ea224f5b71f13516ce5b010e05187",
+      "utils/results.py": "8f7a2e4337f2742285528ece816f4e6e40f7bcf72a66dddb985421079b20b8c0",
+      "utils/search_runtime.py": "e64b66a932aec2bfb790d75abeaae9132ad9e6d3a6c91cc324d7a99c8241f6c4",
+      "utils/visualiser.py": "ba906475036b43668d762d71c6a628bfbd58856cbe15edbe82c1bf9e0ea3b9cb"
+    }
+  },
+  "historical_results_sha256": "8744f27d09cead324e6483755dd453c0ddaf2dc0d14175457fac5796650669ac",
+  "searches_checked": 15,
+  "candidate_records_checked": 750,
+  "full_training_records_checked": 15,
+  "devices": [
+    "cuda:0"
+  ],
+  "identical_subsets_and_dataset": true,
+  "paired_initial_candidates_and_seeds": true,
+  "archive_winners_and_confusion_metrics_verified": true,
+  "historical_report_rebuild_matches": true,
+  "single_validation_selected_test_model": true,
+  "artifact_weights_checksum_verified": true,
+  "tracked_python_syntax_verified": true,
+  "local_environments_datasets_weights_analysis_excluded": true,
+  "documentation_file_links_verified": true,
+  "unit_suite": {
+    "tests_passed": 67,
+    "environment": ".venv-gpu-check",
+    "optional_cuda_artifact_and_api_tests_enabled": true
+  },
+  "gpu_workflow": {
+    "dataset": "breast_cancer_wisconsin",
+    "methods": [
+      "ga",
+      "aging",
+      "random"
+    ],
+    "evaluations_per_method": 4,
+    "full_epochs": 1,
+    "completed_resume_without_retraining": true,
+    "test_evaluated": false,
+    "device": "cuda:0"
+  },
+  "environment_check": {
+    "python": "3.12.14",
+    "gpu_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "device": "cuda:0",
+    "torch_cuda_runtime": "13.0",
+    "training_check": {
+      "dataset": "breast_cancer_wisconsin",
+      "epochs": 1,
+      "status": "ok",
+      "device": "cuda:0",
+      "validation_accuracy": 0.8859649122807017,
+      "num_params": 530
+    },
+    "inference_check": {
+      "model_id": "20261002_190146_3f7e8a6deb_seed101",
+      "device": "cuda:0",
+      "rows": 1,
+      "status": "ok"
+    },
+    "api_check": {
+      "status": "ok",
+      "device": "cuda:0"
+    }
+  },
+  "method_summary": {
+    "ga": {
+      "searches_completed": 5,
+      "proxy_accuracy": {
+        "mean": 0.77408,
+        "std": 0.009309511265367259,
+        "n": 5
+      },
+      "search_seconds": {
+        "mean": 102.32911376000047,
+        "std": 6.69056188146739,
+        "n": 5
+      },
+      "proxy_balanced_accuracy": {
+        "mean": 0.5172907468385682,
+        "std": 0.020388453106993405,
+        "n": 5
+      },
+      "proxy_macro_f1": {
+        "mean": 0.531248941536872,
+        "std": 0.02530131254146544,
+        "n": 5
+      },
+      "full_validation_accuracy": {
+        "mean": 0.9166107295915733,
+        "std": 0.02028653639755087,
+        "n": 5
+      },
+      "full_validation_balanced_accuracy": {
+        "mean": 0.8517756454298832,
+        "std": 0.035712547435935764,
+        "n": 5
+      },
+      "full_validation_macro_f1": {
+        "mean": 0.8674138517028636,
+        "std": 0.030405067582624692,
+        "n": 5
+      }
+    },
+    "aging": {
+      "searches_completed": 5,
+      "proxy_accuracy": {
+        "mean": 0.77708,
+        "std": 0.0061005737435097206,
+        "n": 5
+      },
+      "search_seconds": {
+        "mean": 101.54553248000084,
+        "std": 5.6138060763508,
+        "n": 5
+      },
+      "proxy_balanced_accuracy": {
+        "mean": 0.5325019464422259,
+        "std": 0.027537552357890994,
+        "n": 5
+      },
+      "proxy_macro_f1": {
+        "mean": 0.5528159577990989,
+        "std": 0.03821138068103863,
+        "n": 5
+      },
+      "full_validation_accuracy": {
+        "mean": 0.9253489612915441,
+        "std": 0.009328578221496398,
+        "n": 5
+      },
+      "full_validation_balanced_accuracy": {
+        "mean": 0.866192622136718,
+        "std": 0.015096710932953646,
+        "n": 5
+      },
+      "full_validation_macro_f1": {
+        "mean": 0.8789711945339491,
+        "std": 0.013553359348075509,
+        "n": 5
+      }
+    },
+    "random": {
+      "searches_completed": 5,
+      "proxy_accuracy": {
+        "mean": 0.76754,
+        "std": 0.008526312215723753,
+        "n": 5
+      },
+      "search_seconds": {
+        "mean": 95.32860757999951,
+        "std": 7.2391941276492515,
+        "n": 5
+      },
+      "proxy_balanced_accuracy": {
+        "mean": 0.5054704088024935,
+        "std": 0.018760004743010882,
+        "n": 5
+      },
+      "proxy_macro_f1": {
+        "mean": 0.5172689541575637,
+        "std": 0.028493198531564234,
+        "n": 5
+      },
+      "full_validation_accuracy": {
+        "mean": 0.909655599731502,
+        "std": 0.016267440789395793,
+        "n": 5
+      },
+      "full_validation_balanced_accuracy": {
+        "mean": 0.8375816602680307,
+        "std": 0.02836664069926183,
+        "n": 5
+      },
+      "full_validation_macro_f1": {
+        "mean": 0.8552591585190339,
+        "std": 0.02359234119398443,
+        "n": 5
+      }
+    }
+  },
+  "selected_model": {
+    "method": "aging",
+    "validation_accuracy": 0.9409992943322835,
+    "test_accuracy": 0.9408793232532723
+  }
+}

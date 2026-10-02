@@ -68,7 +68,8 @@ GPU integration test; omitting service dependencies skips the optional API tests
 
 New searches record source-file hashes before their first evaluation. New
 comparison manifests record the same map and check it before each method;
-full-training results record their own startup map. Documentation/UI/output-only
+they also check before each retraining and reject full results with a different
+snapshot. Full-training results record their own startup map. Documentation/UI/output-only
 changes are excluded, while edits/additions/removals of covered Python source
 files are detected even when they have not been committed.
 

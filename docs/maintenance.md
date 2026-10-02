@@ -113,3 +113,10 @@ environment. Dependency consistency, real CUDA training, saved-model inference,
 and API prediction also passed on the RTX 4060. Exact package/device evidence is
 saved in [gpu-environment-check.json](gpu-environment-check.json). No full search
 suite or held-out test evaluation was rerun for these reliability changes.
+
+The subsequent [complete review](project-audit.md) independently rechecked all
+750 main-suite candidate records and 15 retrainings. It fixed source checks at
+the search-to-retraining boundary and for recovered full-training results.
+All **67 tests passed**, along with a small real CUDA comparison and completed
+recovery. Historical benchmark results and deferred presentation tools stayed
+unchanged. Evidence is in [project-audit-evidence.json](project-audit-evidence.json).

@@ -22,6 +22,7 @@ search objective. The current goal is a readable AI/ML engineering portfolio.
 | [Interrupted-run recovery](resuming-runs.md) | Durable trial recovery, deterministic replay, locks, failure handling, and version boundaries |
 | [Validation and results](validation-and-results.md) | Tests, measured suite, score interpretation, audit evidence, and verification limits |
 | [Current state and cleanup](maintenance.md) | Removed redundancy, retained optional tools, deferred issues, and future maintenance |
+| [Complete project review](project-audit.md) | Latest source review, independent results checks, GPU integration, recovery fix, and remaining limits |
 
 ## Existing records and optional components
 
