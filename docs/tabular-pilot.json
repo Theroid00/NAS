@@ -1,0 +1,95 @@
+{
+  "purpose": "Local CPU execution and timing pilot, not a research comparison or GPU benchmark",
+  "dataset_name": "breast_cancer_wisconsin",
+  "schema_version": 3,
+  "git_commit": "43134e7e4470ad9c172d6b30cda2673f78cec75e",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "versions": {
+    "torch": "2.14.1+cpu",
+    "scikit-learn": "1.9.1",
+    "numpy": "2.5.2"
+  },
+  "config": {
+    "methods": [
+      "ga",
+      "aging",
+      "random"
+    ],
+    "seeds": [
+      42
+    ],
+    "split_seed": 42,
+    "evaluation_budget_per_method": 20,
+    "population": 10,
+    "proxy_epochs": 10,
+    "proxy_size": 0,
+    "full_epochs": 30,
+    "full_seeds": [
+      101
+    ],
+    "device": "cpu",
+    "torch_threads": 1
+  },
+  "search_total_elapsed_s": 9.415273399999933,
+  "total_candidate_evaluation_seconds": 6.652593700002399,
+  "full_training_total_elapsed_s": 1.1758663000000524,
+  "test_evaluated": false,
+  "summary": {
+    "ga": {
+      "n_searches": 1,
+      "proxy_mean": 0.9824561403508771,
+      "proxy_std": null,
+      "mean_search_elapsed_s": 5.043434100000013,
+      "full_validation_mean": 0.9824561403508771,
+      "full_validation_std": null
+    },
+    "aging": {
+      "n_searches": 1,
+      "proxy_mean": 0.9824561403508771,
+      "proxy_std": null,
+      "mean_search_elapsed_s": 2.391683699999703,
+      "full_validation_mean": 0.9912280701754386,
+      "full_validation_std": null
+    },
+    "random": {
+      "n_searches": 1,
+      "proxy_mean": 0.9824561403508771,
+      "proxy_std": null,
+      "mean_search_elapsed_s": 1.9801556000002165,
+      "full_validation_mean": 0.9649122807017544,
+      "full_validation_std": null
+    }
+  },
+  "runs": [
+    {
+      "method": "ga",
+      "evaluation_count": 20,
+      "search_elapsed_s": 5.043434100000013,
+      "total_evaluation_seconds": 2.3778870000060124,
+      "best_proxy_accuracy": 0.9824561403508771,
+      "full_training_elapsed_s": 0.34234079999987443,
+      "full_validation_accuracy": 0.9824561403508771,
+      "winner_parameters": 4290
+    },
+    {
+      "method": "aging",
+      "evaluation_count": 20,
+      "search_elapsed_s": 2.391683699999703,
+      "total_evaluation_seconds": 2.3411568000010448,
+      "best_proxy_accuracy": 0.9824561403508771,
+      "full_training_elapsed_s": 0.5556021000011242,
+      "full_validation_accuracy": 0.9912280701754386,
+      "winner_parameters": 15026
+    },
+    {
+      "method": "random",
+      "evaluation_count": 20,
+      "search_elapsed_s": 1.9801556000002165,
+      "total_evaluation_seconds": 1.9335498999953415,
+      "best_proxy_accuracy": 0.9824561403508771,
+      "full_training_elapsed_s": 0.2779233999990538,
+      "full_validation_accuracy": 0.9649122807017544,
+      "winner_parameters": 1122
+    }
+  ]
+}

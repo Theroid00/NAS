@@ -10,6 +10,7 @@ from ga.engine import run_nas
 from ga.aging import run_aging_evolution
 from models.baselines.random_nas import run_random_search
 from utils.search_runtime import validate_budget
+from ga.chromosome import SCHEMA_VERSION
 
 
 def compare(methods, seeds, budget=300, population=20, proxy_epochs=20, device="cpu",
@@ -26,7 +27,11 @@ def compare(methods, seeds, budget=300, population=20, proxy_epochs=20, device="
         raise ValueError("Full training requires positive epochs and real search results")
     root = Path(out_dir) / (datetime.now().strftime("%Y%m%d_%H%M%S") + "_" + uuid4().hex[:8])
     root.mkdir(parents=True)
-    manifest = {"budget_kind": "candidate_evaluations", "evaluation_budget": budget,
+    manifest = {"dataset_name": "breast_cancer_wisconsin", "schema_version": SCHEMA_VERSION,
+                "config": {"methods": list(methods), "population": population,
+                           "proxy_epochs": proxy_epochs, "proxy_size": proxy_size,
+                           "device": device, "max_params": max_params, "full_epochs": full_epochs},
+                "budget_kind": "candidate_evaluations", "evaluation_budget": budget,
                 "smoke": smoke, "split_seed": split_seed, "search_seeds": list(seeds),
                 "full_training_seeds": list(full_seeds), "runs": [], "status": "running"}
     path = root / "comparison.json"

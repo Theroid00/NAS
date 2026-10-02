@@ -122,7 +122,8 @@ def plot_architecture(
         for i, label in enumerate(labels):
             ax.text(i, 0.5, label, ha="center", va="center", bbox=dict(boxstyle="round,pad=0.5", facecolor=PALETTE[0], alpha=0.3))
             if i:
-                ax.annotate("", xy=(i - 0.35, 0.5), xytext=(i - 0.65, 0.5), arrowprops=dict(arrowstyle="->"))
+                ax.annotate("", xy=(i - 0.4, 0.5), xytext=(i - 0.6, 0.5),
+                            arrowprops=dict(arrowstyle="->", color="gray", linewidth=1.5))
         ax.set_title(f"MLP | {arch['activation']} | dropout={arch['dropout']} | layer norm={arch['layer_norm']} | residual when widths match={arch['use_residual']}")
         fig.tight_layout()
         fig.savefig(out_path, dpi=150, bbox_inches="tight")

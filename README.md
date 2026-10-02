@@ -37,6 +37,10 @@ The default comparison uses 300 evaluations per method, three seeds, and 20 prox
 
 Use `--smoke` for orchestration checks with generated scores. Smoke records are rejected by training and provide no accuracy evidence.
 
+Measured local CPU pilot: 60 evaluations at 10 proxy epochs took **9.42 seconds** summed across searches; three 30-epoch winner retrainings took **1.18 seconds** summed across training runs. These exclude Python process startup and were measured with CPU-only PyTorch and one training thread. All three methods tied at 98.25% proxy validation accuracy. See `docs/tabular-pilot.json` for the configuration and measured results. This one-seed pilot checks execution and runtime; it does not establish a winning search method or an RTX 4060 runtime.
+
+Using the warm pilot evaluation cost, the 900-evaluation/20-epoch command above is roughly **3–6 minutes on this local CPU**, including final retraining. Treat that as an extrapolation; architecture distribution, hardware, and GPU overhead can change it. The default 2,700-evaluation comparison costs approximately three times as much for search.
+
 ## Search space and fairness
 
 Schema 3 encodes nine choices: depth (1–4 hidden layers), four widths (16/32/64/128), activation (ReLU/leaky ReLU/ELU), dropout (0/0.1/0.3), LayerNorm, and residual connections. Unused widths are inactive. Residual connections apply only when adjacent widths match. Aging mutation changes one expressed choice. LayerNorm supports even singleton training batches.

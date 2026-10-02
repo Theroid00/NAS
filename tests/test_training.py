@@ -152,8 +152,10 @@ class RankingTests(unittest.TestCase):
         from ga.chromosome import decode
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "winner.json"
-            for record in ({"smoke": True}, {"best_chromosome": [0] * 10},
-                           {"best_chromosome": [0] * NUM_GENES, "best_arch": {}}):
+            compatible = {"schema_version": SCHEMA_VERSION, "dataset_name": "breast_cancer_wisconsin",
+                          "best_chromosome": [0] * NUM_GENES}
+            for record in ({"smoke": True}, {"schema_version": 2, "best_chromosome": [0] * 13},
+                           {**compatible, "dataset_name": "cifar10"}, {**compatible, "best_arch": {}}):
                 path.write_text(json.dumps(record))
                 with self.assertRaises(ValueError):
                     load_winner(path)
