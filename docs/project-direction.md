@@ -51,6 +51,14 @@ later test of scalable loading and larger numeric classification workloads.
   downloads, and benchmark launches still require approval under the user's
   latest instruction to present the plan before acting.
 
+### Implemented engineering milestone
+
+The user subsequently approved trial-level resume on branch
+`resume/resume-trial`. Individual searches and comparison suites now reuse
+completed trials and reconstruct deterministic search state after interruption.
+See [resuming runs](resuming-runs.md). This milestone does not launch the larger
+benchmark suite or implement the other proposed portfolio features.
+
 ## Parked research direction
 
 Return to this section only if research publication becomes a goal again.

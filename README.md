@@ -4,6 +4,8 @@ Compare generational genetic search (GA), aging evolution, and random search usi
 
 This is an **AI/ML engineering portfolio project** focused on reproducible workflows, reliable evaluation, and practical compute tradeoffs. See [project direction](docs/project-direction.md) for current priorities and the research ideas saved for later.
 
+New searches and comparison suites can resume after interruption without retraining completed trials. See [resuming runs](docs/resuming-runs.md) for `--resume` commands and recovery details.
+
 ## Dataset and preprocessing
 
 [UCI Covertype](https://archive.ics.uci.edu/dataset/31/covertype) contains 581,012 rows, 54 features, and seven forest cover classes. It has 10 numerical columns and 44 binary columns. The fixed stratified 60/20/20 split gives 348,607 training rows, 116,202 validation rows, and 116,203 test rows. StandardScaler is fitted exclusively on the numerical columns of the training split; binary columns are preserved. Class counts, scaler statistics, data fingerprint, split seed, and split index fingerprints are recorded. Full split indices can be reconstructed from the fixed dataset ordering and seed and verified against those fingerprints.
