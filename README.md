@@ -2,6 +2,8 @@
 
 Compare generational genetic search (GA), aging evolution, and random search using compact MLPs. **Covertype is the main benchmark**; Breast Cancer Wisconsin remains a small offline check. Experiments run sequentially on one CPU or one GPU, including an RTX 4060 laptop. There is no multi-GPU worker pool or DataParallel path.
 
+This is an **AI/ML engineering portfolio project** focused on reproducible workflows, reliable evaluation, and practical compute tradeoffs. See [project direction](docs/project-direction.md) for current priorities and the research ideas saved for later.
+
 ## Dataset and preprocessing
 
 [UCI Covertype](https://archive.ics.uci.edu/dataset/31/covertype) contains 581,012 rows, 54 features, and seven forest cover classes. It has 10 numerical columns and 44 binary columns. The fixed stratified 60/20/20 split gives 348,607 training rows, 116,202 validation rows, and 116,203 test rows. StandardScaler is fitted exclusively on the numerical columns of the training split; binary columns are preserved. Class counts, scaler statistics, data fingerprint, split seed, and split index fingerprints are recorded. Full split indices can be reconstructed from the fixed dataset ordering and seed and verified against those fingerprints.
