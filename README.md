@@ -1,96 +1,111 @@
 # Tabular Neural Architecture Search
 
-Compare generational genetic search (GA), aging evolution, and random search using small MLPs on Breast Cancer Wisconsin classification. This branch targets one laptop with one CPU or one GPU. Candidates run sequentially; there is no multi-GPU worker pool or DataParallel path.
+Compare generational genetic search (GA), aging evolution, and random search using compact MLPs. **Covertype is the main benchmark**; Breast Cancer Wisconsin remains a small offline check. Experiments run sequentially on one CPU or one GPU, including an RTX 4060 laptop. There is no multi-GPU worker pool or DataParallel path.
 
-The dataset ships with scikit-learn: 569 rows, 30 numerical features, two classes, no runtime download. A fixed stratified 60/20/20 split gives 341 training, 114 validation, and 114 test rows. StandardScaler is fitted on training rows only. All methods share those splits and the same training protocol. Dataset fingerprint, split indices, scaler statistics, dependency versions, trial seeds, architecture schema, and Git revision are saved for provenance.
+## Dataset and preprocessing
 
-## Install and verify
+[UCI Covertype](https://archive.ics.uci.edu/dataset/31/covertype) contains 581,012 rows, 54 features, and seven forest cover classes. It has 10 numerical columns and 44 binary columns. The fixed stratified 60/20/20 split gives 348,607 training rows, 116,202 validation rows, and 116,203 test rows. StandardScaler is fitted exclusively on the numerical columns of the training split; binary columns are preserved. Class counts, scaler statistics, data fingerprint, split seed, and split index fingerprints are recorded. Full split indices can be reconstructed from the fixed dataset ordering and seed and verified against those fingerprints.
 
-Use Python 3.12 in a virtual environment:
+Search defaults to a **fixed stratified 20,000-row training subset and 10,000-row validation subset**, batch size 512. Every method uses the same rows; training shuffle/initialization seeds vary independently. Preprocessing uses the full training split, while candidate training uses the subset. Final winner retraining uses the full training split and selects its checkpoint using the full validation split. Test scores are withheld during comparisons and calibration.
+
+Breast Cancer Wisconsin uses 569 rows, 30 numerical features, and two classes. Its defaults remain all 341 training rows and 114 validation rows, batch size 32. It is useful for checking execution but proved too easy to distinguish the methods in the first pilot.
+
+The CLI defaults to Covertype. Library functions retain Breast Cancer defaults for compatibility with earlier scripts; pass `dataset="covertype"` when using the Python API.
+
+## Installation
+
+Use Python 3.12 and an isolated environment:
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
+```
+
+For the RTX 4060 with a CUDA 13.0-compatible NVIDIA driver:
+
+```powershell
+python -m pip install -r requirements-gpu.txt
+python -c "import torch; print(torch.__version__, torch.cuda.is_available(), torch.cuda.get_device_name(0))"
+```
+
+`requirements-tested-cpu.txt` pins the tested CPU environment used by CI and installs CPU-only PyTorch. For other GPU drivers/platforms, choose a build with the [official PyTorch installer](https://pytorch.org/get-started/locally/). GPU packages are a substantial one-time download. Device selection is explicit; an unavailable CUDA device causes an error.
+
+Download Covertype once before searching. The [scikit-learn fetcher](https://scikit-learn.org/stable/modules/generated/sklearn.datasets.fetch_covtype.html) verifies the source archive and caches the data under `data/tabular_cache/`, which is ignored by Git. Search never initiates a network download:
+
+```powershell
+python prepare_dataset.py --dataset covertype
 python -m unittest discover -s tests -v
 ```
 
-`requirements-tested-cpu.txt` pins the locally tested CPU environment used by CI. For the RTX 4060 with a CUDA 13.0-compatible NVIDIA driver, use `python -m pip install -r requirements-gpu.txt`, then `--device cuda`. Confirm access with `python -c "import torch; print(torch.__version__, torch.cuda.is_available(), torch.cuda.get_device_name(0))"`. For other drivers/platforms, use the [official installer](https://pytorch.org/get-started/locally/). The CPU lock file installs CPU-only PyTorch. CPU is the default; these tiny models may run faster on CPU because GPU launch and transfer overhead can dominate. Measure both on your laptop before choosing.
+The tests use synthetic Covertype data, so CI needs no dataset download. They cover split/subset separation, training-only scaling, unchanged binary columns, seven-class forward/backward passes, parameter estimates, checkpoint restoration, dataset provenance, and loss differences when accuracy ties.
 
-## Run comparisons
-
-Start with a quick pilot (three methods, one seed, 60 total candidate evaluations):
+## Run a GPU pilot
 
 ```powershell
-python run_comparison.py --device cpu --budget 20 --population 10 --seeds 42 --proxy-epochs 10
+python run_comparison.py --dataset covertype --device cuda --budget 20 --population 5 --seeds 42 43 --proxy-epochs 5
 ```
 
-A larger repeated comparison evaluates 100 candidates per method for three search seeds, then retrains each winner with two fresh seeds. Test data is never scored by this command:
+This evaluates 120 candidates across three methods and two seeds. GA has four generations per seed; aging has 15 replacements after its initial population. The initial candidates and their training seeds match across methods for a controlled starting point. Search trajectories then diverge. A shared initial winner can still produce a legitimate tie.
+
+Measured RTX 4060 pilot using this command: **100.86 seconds** summed across six searches. Mean best proxy validation accuracy was GA **72.58%**, aging **73.95%**, and random **73.925%**. Scores were distinct within each seed; aging/random were essentially tied on average. All 120 trials used `cuda:0`, the same 20,000/10,000 fixed subsets, and valid outcomes. This five-epoch, two-seed pilot checks the new dataset and measures runtime; it does not establish a reliable winner or validate proxy ranking fidelity. No final retraining or test evaluation was performed. Configuration, score/loss variation, and measured results are in `docs/covertype-gpu-pilot.json`.
+
+Use measured pilot durations to size the main comparison. Covertype training costs substantially more than the 569-row dataset; earlier Breast Cancer timing estimates do not apply. Increasing epochs or candidate budget increases cost approximately proportionally, but model size and full retraining also matter.
 
 ```powershell
-python run_comparison.py --device cuda --budget 100 --population 20 --seeds 42 43 44 --proxy-epochs 20 --full-epochs 100 --full-seeds 101 102
+python run_comparison.py --dataset covertype --device cuda --budget 100 --population 20 --seeds 42 43 44 --proxy-epochs 20 --full-epochs 30 --full-seeds 101 102
 ```
 
-This costs 900 proxy evaluations and 18 final training runs. Reduce `--budget`, number of `--seeds`, or `--proxy-epochs` for faster iteration. Reduce all methods equally. The program records measured search durations; estimate a larger run by scaling the pilot's total evaluation time by evaluation count and epoch count, then allow for final retraining. This is an estimate, not a measured RTX 4060 runtime.
+This costs 900 proxy evaluations and 18 final retrainings. Final retrainings use all 348,607 training rows and validate on 116,202 rows, so they require a separate runtime allowance. Test data is not scored. Increase the number of search seeds before making claims about consistent superiority.
 
-The default comparison uses 300 evaluations per method, three seeds, and 20 proxy epochs; final retraining is enabled only with `--full-epochs`. `--proxy-size 0` uses all 341 training rows. Positive sizes select a fixed stratified training subset; validation always uses the same 114 rows. Reducing epochs or budget is preferable to discarding rows in this already small dataset.
+`--proxy-size` and `--validation-size` override fixed subset sizes. Zero means all rows in the corresponding training or validation split. Apply identical settings to all methods. Larger fixed validation subsets improve score resolution; they do not guarantee distinct winners. Validation accuracy remains the primary fitness, and earliest observations win exact ties. Validation cross-entropy is also recorded to expose confidence differences between equal-accuracy candidates; it is not silently substituted as the fitness.
 
-Use `--smoke` for orchestration checks with generated scores. Smoke records are rejected by training and provide no accuracy evidence.
+`--smoke` generates synthetic scores for orchestration checks. Smoke winners are rejected by training and provide no accuracy evidence.
 
-Measured local CPU pilot: 60 evaluations at 10 proxy epochs took **9.42 seconds** summed across searches; three 30-epoch winner retrainings took **1.18 seconds** summed across training runs. These exclude Python process startup and were measured with CPU-only PyTorch and one training thread. All three methods tied at 98.25% proxy validation accuracy. See `docs/tabular-pilot.json` for the configuration and measured results. This one-seed pilot checks execution and runtime; it does not establish a winning search method or an RTX 4060 runtime.
+## Training and search protocol
 
-Using the warm pilot evaluation cost, the 900-evaluation/20-epoch command above is roughly **3–6 minutes on this local CPU**, including final retraining. Treat that as an extrapolation; architecture distribution, hardware, and GPU overhead can change it. The default 2,700-evaluation comparison costs approximately three times as much for search.
+Architecture schema 3 encodes nine choices: depth (1–4 hidden layers), four widths (16/32/64/128), activation (ReLU/leaky ReLU/ELU), dropout (0/0.1/0.3), LayerNorm, and residual connections. Input width and output classes come from the dataset. Unused hidden widths are inactive. Residual connections apply only when adjacent widths match. Aging mutation changes one expressed choice. LayerNorm supports singleton batches.
 
-Measured RTX 4060 Laptop GPU pilot with the same budget and epochs: **21.40 seconds** across the three searches plus **4.12 seconds** across three winner retrainings. All 60 candidates ran on `cuda:0` with valid outcomes. All methods tied at 98.25% proxy validation accuracy and 99.12% after retraining (training seed 101). Test data was not scored. GPU search was slower than this CPU pilot for these tiny models; this does not imply that CPU will outperform GPU on larger workloads. The one-time CUDA package installation and Python process startup are excluded. See `docs/tabular-gpu-pilot.json` for hardware, configuration, versions, and results.
+Candidates start from scratch with Adam, learning rate 0.001, weight decay 0.0001, cosine decay, and deterministic seeds. CPU training uses one thread. Search randomness is independent of training randomness. All methods receive equal candidate evaluation budgets and the same per-trial seed schedule. GA retrains survivors, which consumes budget. Matching evaluations does not match wall-clock cost; both time and parameter counts are recorded.
+
+Search fitness is end-of-proxy validation accuracy. Full training saves and restores the best-validation checkpoint and records that checkpoint's validation loss. A durable archive preserves the historical best search candidate. Fatal dataset/programming failures stop and record the run; memory exhaustion, divergence, and parameter-limit violations have explicit candidate statuses.
+
+## Calibrate the proxy
 
 ```powershell
-python run_comparison.py --device cuda --budget 20 --population 10 --seeds 42 --proxy-epochs 10 --full-epochs 30 --full-seeds 101
+python calibrate_proxy.py --dataset covertype --device cuda --samples 12 --seeds 101 102 --proxy-epochs 20 --long-epochs 30 --top-k 3
 ```
 
-## Search space and fairness
+Calibration measures Spearman rank agreement and top-k overlap between the proxy and longer full-data training, using validation only. Proxy scores use the fixed validation subset; reference scores use the full validation split. This measures the combined fidelity of the smaller training set, validation subset, and shorter training schedule. If agreement is weak, increase training fidelity before the main comparison. Undefined correlations from constant scores are reported as such.
 
-Schema 3 encodes nine choices: depth (1–4 hidden layers), four widths (16/32/64/128), activation (ReLU/leaky ReLU/ELU), dropout (0/0.1/0.3), LayerNorm, and residual connections. Unused widths are inactive. Residual connections apply only when adjacent widths match. Aging mutation changes one expressed choice. LayerNorm supports even singleton training batches.
-
-Every candidate starts from scratch using Adam (learning rate 0.001, weight decay 0.0001), cosine decay, batch size 32, and deterministic seeds. CPU training uses one thread to avoid overhead for tiny matrices. Search RNG is independent of training RNG. All three methods receive identical candidate evaluation budgets and the same per-trial seed schedule. GA re-evaluates survivors; those retrainings consume budget. Candidate evaluation matching is not identical wall-clock or parameter matching; durations and parameter counts are also logged.
-
-Search fitness is end-of-proxy validation accuracy. Full training selects its checkpoint by best validation accuracy. Historical best search candidates remain archived even after population replacement. Infrastructure failures stop a run and are recorded; memory exhaustion, divergence, and parameter limit failures have explicit statuses.
-
-## Calibrate before making claims
-
-```powershell
-python calibrate_proxy.py --device cpu --samples 12 --seeds 101 102 --proxy-epochs 20 --long-epochs 100 --top-k 3
-```
-
-Calibration measures Spearman rank agreement and top-k overlap between proxy and longer training, using validation only. If agreement is weak, increase proxy epochs before the main comparison. Scores can tie because validation has only 114 rows; undefined correlation is reported rather than invented.
-
-This small dataset is an inexpensive engineering benchmark, not enough evidence for a general NAS research claim. It may saturate quickly, so random search can tie or win. Run repeated seeds, compare variation and cost, include a fixed MLP, and expand to larger tabular datasets if the methods are indistinguishable. Tabular results must never be compared numerically with historical CIFAR results.
+A larger dataset makes this a more informative experiment, but it does not guarantee evolution beats random search. Compare repeated results, uncertainty, and cost. Include a fixed MLP and eventually additional datasets before claiming a general NAS advantage.
 
 ## Individual searches and fixed MLP
 
 ```powershell
-python main.py --mode nas --pop 10 --gen 5 --proxy-epochs 20 --device cpu
-python main.py --mode aging --pop 10 --n-eval 50 --proxy-epochs 20 --device cpu
-python main.py --mode random-search --n-eval 50 --proxy-epochs 20 --device cpu
-python main.py --mode train-mlp --full-epochs 100 --seed 101 --validation-only
+python main.py --dataset covertype --mode nas --pop 10 --gen 5 --proxy-epochs 10 --device cuda
+python main.py --dataset covertype --mode aging --pop 10 --n-eval 50 --proxy-epochs 10 --device cuda
+python main.py --dataset covertype --mode random-search --n-eval 50 --proxy-epochs 10 --device cuda
+python main.py --dataset covertype --mode train-mlp --full-epochs 30 --seed 101 --device cuda --validation-only
 ```
 
-The fixed baseline is 30→64→32→2 with ReLU, dropout 0.1, no normalization or skips (4,130 parameters). It uses the same final training and checkpoint protocol.
+The fixed baseline has two hidden layers (64 and 32), ReLU, dropout 0.1, no normalization or skips. Its input/output sizes match the dataset, and it uses the shared final training/checkpoint protocol.
 
 ```powershell
-python evaluate_best.py --json PATH_TO_WINNER_JSON --epochs 100 --seed 101 --validation-only
-python evaluate_best.py --test-checkpoint PATH_TO_FULL_TRAIN_JSON --device cpu
+python evaluate_best.py --json PATH_TO_WINNER_JSON --epochs 30 --seed 101 --device cuda --validation-only
+python evaluate_best.py --test-checkpoint PATH_TO_FULL_TRAIN_JSON --device cuda
 ```
 
-Evaluate test only after freezing the protocol and candidate choices. A checkpoint with a recorded test score cannot be tested again through this command. Use the winner's original `--split-seed` when retraining; training seeds can vary independently.
+Retraining reads the dataset and, by default, the split seed from the saved winner. Test evaluation reconstructs the model from its saved dataset and verifies the current dataset fingerprint. Freeze the protocol and candidate choices before evaluating test. A checkpoint with a recorded test score cannot be tested again through this command.
 
-## Outputs and historical files
+## Historical pilots and outputs
 
-New outputs live under `experiments/tabular/`, in unique run directories/files. Search writes generation CSV, trial JSONL, metadata JSON, and a winner JSON. Comparison writes its manifest incrementally. Full training saves model weights, history, training configuration, and paths. Existing files are never silently overwritten.
+New runs live under `experiments/tabular/`, with unique run directories/files and explicit dataset names in records. Search writes generation CSV, trial JSONL, metadata JSON, and a winner JSON. Comparison manifests are saved incrementally. Full training saves weights, history, protocol, and paths. Results are not silently overwritten. Comparison plots reject files from different datasets.
 
-Historical CIFAR loaders, CNN builder, ResNet code, reports, and experiment artifacts remain for reference. Their schema 2 winners are rejected by the schema 3 trainer; the current CLI trains MLPs. Optional `requirements-cifar.txt` installs torchvision for historical code. Restore an earlier Git revision to reproduce the earlier CIFAR pipeline.
+The earlier **Breast Cancer** pilots are preserved in `docs/tabular-pilot.json` and `docs/tabular-gpu-pilot.json`. On that task, all methods selected the same initial candidate and tied at 98.25% proxy accuracy. GPU retraining with seed 101 tied at 99.12%. The GPU searches took 21.40 seconds and three 30-epoch retrainings took 4.12 seconds. Corresponding CPU sums were 9.42 and 1.18 seconds. These timings exclude package installation and Python startup and do not predict Covertype runtime. To reproduce that task, explicitly pass `--dataset breast_cancer_wisconsin`.
 
-`benchmark_search.py` remains an optional separate NATS-Bench topology lookup experiment (`requirements-benchmark.txt`). It requires the downloaded benchmark archive and evaluates a different image search space; its results do not establish an advantage for this tabular MLP task.
+Historical CIFAR loaders, CNN builder, ResNet code, reports, and artifacts remain for reference. Their schema 2 winners are rejected by the tabular trainer. `requirements-cifar.txt` supplies optional torchvision; restore an earlier Git revision to reproduce the CIFAR pipeline.
 
-## Additional experiments
+`benchmark_search.py` is a separate optional NATS-Bench topology lookup experiment (`requirements-benchmark.txt`). It requires its downloaded archive and evaluates a different image search space; its results do not establish an advantage for the tabular MLP task.
 
-`run_ablations.py` tests crossover, mutation, elitism, and population changes using repeated equal evaluation budgets. `run_hyper_sweep.py` explores population sizes and proxy epochs, recording that varying epoch counts changes training cost. Both now use the tabular pipeline. Neither accesses test scores.
+`run_ablations.py` and `run_hyper_sweep.py` now accept `--dataset`, defaulting to Covertype. Ablations compare operators under equal candidate evaluation budgets; sweeps record the unequal training costs when proxy epochs vary. Neither evaluates test scores.

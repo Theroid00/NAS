@@ -34,8 +34,10 @@ def _raw(dataset):
     if dataset == "covertype":
         try:
             raw = fetch_covtype(data_home=str(DATA_HOME), download_if_missing=False)
+        except PermissionError:
+            raise
         except OSError as error:
-            raise OSError("Covertype is not cached. Run python prepare_dataset.py --dataset covertype first") from error
+            raise OSError(f"Cannot load cached Covertype: {error}. Run python prepare_dataset.py --dataset covertype first") from error
         return raw.data, raw.target.astype(np.int64) - 1
     raw = load_breast_cancer()
     return raw.data, raw.target

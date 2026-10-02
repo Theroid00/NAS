@@ -104,7 +104,8 @@ def mutate_active(chromosome, rng=None):
     arch = decode(chromosome)
     active = [i for i, name in enumerate(GENE_NAMES)
               if not name.startswith("width_") or int(name.split("_")[1]) <= arch["num_layers"]]
-    widths = [30] + [arch[f"width_{j}"] for j in range(1, arch["num_layers"] + 1)]
+    # Both supported input widths (30 and 54) differ from every hidden-width choice.
+    widths = [arch[f"width_{j}"] for j in range(1, arch["num_layers"] + 1)]
     if not any(a == b for a, b in zip(widths, widths[1:])):
         active.remove(GENE_NAMES.index("use_residual"))
     i = rng.choice(active)

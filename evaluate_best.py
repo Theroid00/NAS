@@ -20,7 +20,7 @@ def main():
     else:
         record = load_winner(args.json or latest_winner(args.save_dir))
         result = full_train(record["best_chromosome"], device=args.device, epochs=args.epochs,
-                            seed=args.seed, split_seed=args.split_seed if args.split_seed is not None else record["hyperparams"]["split_seed"],
+                            seed=args.seed, split_seed=args.split_seed if args.split_seed is not None else record.get("hyperparams", {}).get("split_seed", 42),
                             evaluate_test=not args.validation_only, save_dir=args.save_dir,
                             run_id=record["run_id"], dataset=record["dataset_name"])
     print(f"Validation: {result['best_val_accuracy']:.4f}; test: {result['test_accuracy']}")

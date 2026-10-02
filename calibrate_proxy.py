@@ -64,7 +64,7 @@ def main():
         chromosome = random_chromosome(rng)
         arch = decode(chromosome)
         active = {k: v for k, v in arch.items() if not k.startswith("width_") or int(k.split("_")[1]) <= arch["num_layers"]}
-        widths = [30] + [arch[f"width_{j}"] for j in range(1, arch["num_layers"] + 1)]
+        widths = [arch[f"width_{j}"] for j in range(1, arch["num_layers"] + 1)]
         if not any(a == b for a, b in zip(widths, widths[1:])):
             active["use_residual"] = False
         key = json.dumps(active, sort_keys=True)

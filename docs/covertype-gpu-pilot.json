@@ -1,0 +1,345 @@
+{
+  "purpose": "Covertype GPU pilot: proxy scores and runtime only; two seeds do not establish superiority",
+  "dataset_name": "covertype",
+  "schema_version": 3,
+  "config": {
+    "methods": [
+      "ga",
+      "aging",
+      "random"
+    ],
+    "population": 5,
+    "proxy_epochs": 5,
+    "proxy_size": 20000,
+    "validation_size": 10000,
+    "device": "cuda",
+    "max_params": null,
+    "full_epochs": null
+  },
+  "search_seeds": [
+    42,
+    43
+  ],
+  "split_seed": 42,
+  "evaluation_budget_per_method": 20,
+  "test_evaluated": false,
+  "full_training_performed": false,
+  "hardware": {
+    "gpu_name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "cuda_runtime": "13.0",
+    "driver_version": "610.74"
+  },
+  "search_total_elapsed_s": 100.85775259999718,
+  "summary": {
+    "ga": {
+      "n_searches": 2,
+      "proxy_mean": 0.7258,
+      "proxy_std": 0.022768838354206834,
+      "mean_search_elapsed_s": 17.544963149999603,
+      "proxy_validation_loss_mean": 0.6628832473754883
+    },
+    "aging": {
+      "n_searches": 2,
+      "proxy_mean": 0.7395,
+      "proxy_std": 0.011737972567696731,
+      "mean_search_elapsed_s": 16.94639515000017,
+      "proxy_validation_loss_mean": 0.621972760772705
+    },
+    "random": {
+      "n_searches": 2,
+      "proxy_mean": 0.73925,
+      "proxy_std": 0.0007778174593051951,
+      "mean_search_elapsed_s": 15.937517999998818,
+      "proxy_validation_loss_mean": 0.680218611907959
+    }
+  },
+  "runs": [
+    {
+      "method": "ga",
+      "seed": 42,
+      "evaluation_count": 20,
+      "best_proxy_accuracy": 0.7419,
+      "best_proxy_validation_loss": 0.6165407760620117,
+      "search_elapsed_s": 21.540682099999685,
+      "unique_accuracy_values": 19,
+      "best_trial_id": 15,
+      "winner_chromosome": [
+        2,
+        2,
+        2,
+        3,
+        0,
+        1,
+        0,
+        1,
+        1
+      ],
+      "winner_architecture": {
+        "num_layers": 3,
+        "width_1": 64,
+        "width_2": 64,
+        "width_3": 128,
+        "width_4": 16,
+        "activation": "leaky_relu",
+        "dropout": 0.0,
+        "layer_norm": true,
+        "use_residual": true
+      }
+    },
+    {
+      "method": "aging",
+      "seed": 42,
+      "evaluation_count": 20,
+      "best_proxy_accuracy": 0.7478,
+      "best_proxy_validation_loss": 0.6147447082519532,
+      "search_elapsed_s": 18.36793900000157,
+      "unique_accuracy_values": 19,
+      "best_trial_id": 13,
+      "winner_chromosome": [
+        2,
+        3,
+        0,
+        3,
+        0,
+        1,
+        0,
+        1,
+        1
+      ],
+      "winner_architecture": {
+        "num_layers": 3,
+        "width_1": 128,
+        "width_2": 16,
+        "width_3": 128,
+        "width_4": 16,
+        "activation": "leaky_relu",
+        "dropout": 0.0,
+        "layer_norm": true,
+        "use_residual": true
+      }
+    },
+    {
+      "method": "random",
+      "seed": 42,
+      "evaluation_count": 20,
+      "best_proxy_accuracy": 0.7398,
+      "best_proxy_validation_loss": 0.6676337997436523,
+      "search_elapsed_s": 13.983237299999018,
+      "unique_accuracy_values": 20,
+      "best_trial_id": 7,
+      "winner_chromosome": [
+        2,
+        3,
+        2,
+        1,
+        2,
+        1,
+        0,
+        1,
+        0
+      ],
+      "winner_architecture": {
+        "num_layers": 3,
+        "width_1": 128,
+        "width_2": 64,
+        "width_3": 32,
+        "width_4": 64,
+        "activation": "leaky_relu",
+        "dropout": 0.0,
+        "layer_norm": true,
+        "use_residual": false
+      }
+    },
+    {
+      "method": "ga",
+      "seed": 43,
+      "evaluation_count": 20,
+      "best_proxy_accuracy": 0.7097,
+      "best_proxy_validation_loss": 0.7092257186889649,
+      "search_elapsed_s": 13.54924419999952,
+      "unique_accuracy_values": 17,
+      "best_trial_id": 15,
+      "winner_chromosome": [
+        2,
+        1,
+        3,
+        0,
+        0,
+        2,
+        0,
+        0,
+        0
+      ],
+      "winner_architecture": {
+        "num_layers": 3,
+        "width_1": 32,
+        "width_2": 128,
+        "width_3": 16,
+        "width_4": 16,
+        "activation": "elu",
+        "dropout": 0.0,
+        "layer_norm": false,
+        "use_residual": false
+      }
+    },
+    {
+      "method": "aging",
+      "seed": 43,
+      "evaluation_count": 20,
+      "best_proxy_accuracy": 0.7312,
+      "best_proxy_validation_loss": 0.629200813293457,
+      "search_elapsed_s": 15.524851299998772,
+      "unique_accuracy_values": 20,
+      "best_trial_id": 14,
+      "winner_chromosome": [
+        2,
+        3,
+        3,
+        3,
+        0,
+        2,
+        2,
+        1,
+        1
+      ],
+      "winner_architecture": {
+        "num_layers": 3,
+        "width_1": 128,
+        "width_2": 128,
+        "width_3": 128,
+        "width_4": 16,
+        "activation": "elu",
+        "dropout": 0.3,
+        "layer_norm": true,
+        "use_residual": true
+      }
+    },
+    {
+      "method": "random",
+      "seed": 43,
+      "evaluation_count": 20,
+      "best_proxy_accuracy": 0.7387,
+      "best_proxy_validation_loss": 0.6928034240722656,
+      "search_elapsed_s": 17.891798699998617,
+      "unique_accuracy_values": 20,
+      "best_trial_id": 6,
+      "winner_chromosome": [
+        3,
+        2,
+        2,
+        3,
+        1,
+        0,
+        0,
+        1,
+        0
+      ],
+      "winner_architecture": {
+        "num_layers": 4,
+        "width_1": 64,
+        "width_2": 64,
+        "width_3": 128,
+        "width_4": 32,
+        "activation": "relu",
+        "dropout": 0.0,
+        "layer_norm": true,
+        "use_residual": false
+      }
+    }
+  ],
+  "git_commit": "893e04a55f49594485556ee48fbc4d008ea0a5b1",
+  "versions": {
+    "torch": "2.14.1+cu130",
+    "scikit-learn": "1.9.1",
+    "numpy": "2.5.2"
+  },
+  "dataset": {
+    "name": "covertype",
+    "input_features": 54,
+    "num_classes": 7,
+    "split_seed": 42,
+    "train_samples": 348607,
+    "validation_samples": 116202,
+    "test_samples": 116203,
+    "split_policy": "stratified 60/20/20, fixed dataset ordering",
+    "split_index_sha256": {
+      "train": "46ab5bcf70ee426a12d2f5f8b560717ca51065cb3a22d896fa25c0de616a15f7",
+      "validation": "bfdbda038a1c06726dd0f0c151c083f7026e9582c636208d7af23c113bdf4f61",
+      "test": "93b9e1de6f51ddc14e5227357e5e4f5ae6b80b76a1e2f58ed737970509987e1e"
+    },
+    "preprocessing": "StandardScaler fitted exclusively on training rows; binary columns unchanged",
+    "scaled_feature_columns": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "class_counts": {
+      "train": [
+        127104,
+        169981,
+        21452,
+        1648,
+        5696,
+        10420,
+        12306
+      ],
+      "validation": [
+        42368,
+        56660,
+        7151,
+        550,
+        1898,
+        3473,
+        4102
+      ],
+      "test": [
+        42368,
+        56660,
+        7151,
+        549,
+        1899,
+        3474,
+        4102
+      ]
+    },
+    "scaler_mean": [
+      2959.565066105959,
+      155.79321987223435,
+      14.114730914755011,
+      269.55355457578304,
+      46.499100706526264,
+      2348.978032569627,
+      212.10670468464488,
+      223.30513156649178,
+      142.55641166126898,
+      1979.489138198602
+    ],
+    "scaler_scale": [
+      279.96933929780414,
+      111.99986278613612,
+      7.486051081984384,
+      212.66685610486223,
+      58.37731735979983,
+      1557.143560651229,
+      26.78470488053002,
+      19.762775259089494,
+      38.31295449262737,
+      1322.3684746672584
+    ],
+    "data_sha256": "f2b3475f6456439ce0a1ab92e73fbad4213044bb5937e8dd6ce69363a8bd052f"
+  },
+  "proxy_protocol": {
+    "training_samples": 20000,
+    "validation_samples": 10000,
+    "batch_size": 512,
+    "train_indices_sha256": "98d0af4e411babab2bee1707d45e891081b5cc00592fb660d7070a8e5ab5cb16",
+    "validation_indices_sha256": "571eed309244ffd44b76169fc0d2f69cb230cd8b6a3e0585027cec89b285daac"
+  }
+}
