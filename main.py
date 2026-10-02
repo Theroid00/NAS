@@ -17,7 +17,7 @@ def parse_args(argv=None):
     p.add_argument("--mutation-p", type=float, default=0.1)
     p.add_argument("--tournament-k", type=int, default=5)
     p.add_argument("--elites", type=int, default=2)
-    p.add_argument("--device", default="cpu")
+    p.add_argument("--device", default="cuda")
     p.add_argument("--n-eval", type=int, default=300)
     p.add_argument("--max-params", type=int)
     p.add_argument("--best-json")
@@ -56,14 +56,17 @@ def main():
         from models.baselines.random_nas import run_random_search
         result = run_random_search(n_evaluations=args.n_eval, **common)
     elif args.mode in ("train-best", "train-mlp"):
-        from utils.results import load_winner, latest_winner
-        from training.trainer import full_train
-        record = {} if args.mode == "train-mlp" else load_winner(args.best_json or latest_winner(args.save_dir))
-        result = full_train(record.get("best_chromosome"), baseline=args.mode == "train-mlp",
-                            device=args.device, epochs=args.full_epochs, seed=args.seed,
-                            split_seed=args.split_seed if args.split_seed is not None else record.get("hyperparams", {}).get("split_seed", RANDOM_SEED), save_dir=args.save_dir,
-                            run_id=record.get("run_id", "mlp"),
-                            evaluate_test=not args.validation_only, dataset=record.get("dataset_name", args.dataset))
+        from utils.results import latest_winner
+        from training.trainer import full_train, train_winner
+        common_training = dict(device=args.device, epochs=args.full_epochs, seed=args.seed,
+                               save_dir=args.save_dir, evaluate_test=not args.validation_only)
+        if args.mode == "train-best":
+            result = train_winner(args.best_json or latest_winner(args.save_dir),
+                                  split_seed=args.split_seed, **common_training)
+        else:
+            result = full_train(baseline=True, dataset=args.dataset, run_id="mlp",
+                                split_seed=args.split_seed if args.split_seed is not None else RANDOM_SEED,
+                                **common_training)
         print(result["results_path"])
         return
     else:

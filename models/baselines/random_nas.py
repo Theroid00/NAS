@@ -23,9 +23,3 @@ def run_random_search(n_evaluations=300, device="cpu", proxy_epochs=20, smoke=Fa
             batch = [random_chromosome(rng) for _ in range(min(20, n_evaluations - start))]
             session.evaluate(batch)
         return session.finish()
-
-
-def random_search(n_evaluations=300, device="cpu", proxy_epochs=20, smoke=False, **kwargs):
-    """Preserve the historical tuple interface while persisting the winning record."""
-    result = run_random_search(n_evaluations, device, proxy_epochs, smoke, **kwargs)
-    return result["best_chromosome"], result["best_fitness"], result["best_arch"]

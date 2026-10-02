@@ -86,8 +86,3 @@ def evaluate_trial(chromosome, device="cpu", proxy_epochs=20, seed=42, split_see
         del model
         if str(device).startswith("cuda"):
             torch.cuda.empty_cache()
-
-
-def evaluate_architecture(chromosome, device="cpu", proxy_epochs=20, **kwargs):
-    """Compatibility wrapper; infrastructure/programming errors propagate."""
-    return evaluate_trial(chromosome, device, proxy_epochs, **kwargs)["fitness"]

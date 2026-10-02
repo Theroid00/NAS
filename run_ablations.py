@@ -18,7 +18,7 @@ def main():
     p.add_argument("--budget", type=int, default=200)
     from data.specs import DATASETS
     p.add_argument("--dataset", choices=list(DATASETS), default="covertype")
-    p.add_argument("--device", default="cpu")
+    p.add_argument("--device", default="cuda")
     p.add_argument("--proxy-epochs", type=int, default=20)
     p.add_argument("--split-seed", type=int, default=42)
     p.add_argument("--smoke", action="store_true")

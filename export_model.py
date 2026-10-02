@@ -1,4 +1,4 @@
-"""Package a full-trained winner for portable CPU inference."""
+"""Package a full-trained winner for portable CUDA or CPU inference."""
 import argparse
 from serving.artifact import export_artifact
 

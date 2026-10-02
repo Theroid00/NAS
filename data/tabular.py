@@ -8,13 +8,11 @@ from torch.utils.data import DataLoader, TensorDataset
 from sklearn.datasets import load_breast_cancer, fetch_covtype
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from data.specs import dataset_spec, search_sizes
+from data.specs import DEFAULT_DATASET, INPUT_FEATURES, NUM_CLASSES, dataset_spec, search_sizes
 
 # Library defaults retain compatibility with the original tabular API.
 # Experiment CLIs select Covertype explicitly by default.
-DATASET_NAME = "breast_cancer_wisconsin"
-INPUT_FEATURES = 30
-NUM_CLASSES = 2
+DATASET_NAME = DEFAULT_DATASET
 DATA_HOME = Path(__file__).resolve().parent / "tabular_cache"
 
 

@@ -2,7 +2,7 @@
 utils/logger.py
 ===============
 Per-generation logging to CSV and console.
-Creates experiments/generation_logs/run_<run_id>.csv
+Creates run_<run_id>.csv in the configured tabular generation-log directory.
 """
 
 import os
@@ -11,7 +11,7 @@ from ga.chromosome import chromosome_to_str
 
 
 class GenerationLogger:
-    """Logs GA generation stats to a CSV file."""
+    """Logs GA generation or aging population stats to a CSV file."""
 
     COLUMNS = [
         "gen", "best_fitness", "mean_fitness", "std_fitness", "min_fitness",

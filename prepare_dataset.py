@@ -1,4 +1,4 @@
-"""Download the selected research dataset once, before starting a search."""
+"""Prepare the selected tabular dataset once, before starting a search."""
 import argparse
 import json
 from data.specs import DATASETS

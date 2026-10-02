@@ -12,6 +12,19 @@ from utils.search_runtime import resolve_device
 from utils.persistence import atomic_json
 
 
+def train_winner(winner_path, device="cpu", epochs=FULL_EPOCHS, seed=42,
+                 split_seed=None, save_dir="experiments/tabular/best_architectures",
+                 evaluate_test=True):
+    """Validate a saved search winner and retain its dataset and split by default."""
+    from utils.results import load_winner
+    record = load_winner(winner_path)
+    return full_train(record["best_chromosome"], device=device, epochs=epochs,
+                      seed=seed, split_seed=split_seed if split_seed is not None else
+                      record.get("hyperparams", {}).get("split_seed", 42),
+                      evaluate_test=evaluate_test, save_dir=save_dir,
+                      run_id=record["run_id"], dataset=record["dataset_name"])
+
+
 def full_train(chromosome=None, device="cpu", epochs=FULL_EPOCHS,
                save_dir="experiments/tabular/best_architectures", run_id="best", seed=42,
                split_seed=42, evaluate_test=True, baseline=False, dataset="breast_cancer_wisconsin"):
@@ -87,14 +100,12 @@ def train_model(model, device, epochs, save_dir, run_id, seed, split_seed,
             best_val = val
             best_val_loss = val_loss
             best_val_metrics = metrics if isinstance(metrics, dict) else {"accuracy": val}
-            underlying = model
-            torch.save(underlying.state_dict(), checkpoint)
+            torch.save(model.state_dict(), checkpoint)
         history.append({"epoch": epoch + 1, "train_acc": correct / total,
                         "train_loss": running_loss / total, "val_acc": val, "val_loss": val_loss,
                         "val_metrics": metrics if isinstance(metrics, dict) else {"accuracy": val}})
         print(f"Epoch {epoch + 1}: train={correct / total:.4f}, val={val:.4f}, best={best_val:.4f}")
-    underlying = model
-    underlying.load_state_dict(torch.load(checkpoint, map_location=primary, weights_only=True))
+    model.load_state_dict(torch.load(checkpoint, map_location=primary, weights_only=True))
     test_metrics = validate(model, test_loader, primary, return_metrics=True) if evaluate_test else None
     test_acc = test_metrics["accuracy"] if isinstance(test_metrics, dict) else test_metrics
     results_path = root / f"full_train_{run_id}.json"

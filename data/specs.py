@@ -6,6 +6,11 @@ DATASETS = {
                  "proxy_size": 20000, "validation_size": 10000, "batch_size": 512},
 }
 
+# Small offline library default; command-line experiments select Covertype.
+DEFAULT_DATASET = "breast_cancer_wisconsin"
+INPUT_FEATURES = DATASETS[DEFAULT_DATASET]["input_features"]
+NUM_CLASSES = DATASETS[DEFAULT_DATASET]["num_classes"]
+
 
 def dataset_spec(name):
     if name not in DATASETS:

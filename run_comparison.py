@@ -164,7 +164,7 @@ def main():
     p.add_argument("--split-seed", type=int, default=42)
     from data.specs import DATASETS
     p.add_argument("--dataset", choices=list(DATASETS), default="covertype")
-    p.add_argument("--device", default="cpu")
+    p.add_argument("--device", default="cuda")
     p.add_argument("--smoke", action="store_true")
     p.add_argument("--max-params", type=int)
     p.add_argument("--full-epochs", type=int)

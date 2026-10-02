@@ -11,7 +11,6 @@ Functions:
 """
 
 import os
-import warnings
 
 import pandas as pd
 import matplotlib
@@ -227,7 +226,7 @@ def plot_gene_heatmap(
     Returns:
         Path to saved figure.
     """
-    from ga.chromosome import GENE_NAMES, NUM_GENES
+    from ga.chromosome import GENE_NAMES
 
     if top_k is not None:
         paired = sorted(zip(fitnesses, population), reverse=True)[:top_k]

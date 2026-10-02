@@ -24,8 +24,6 @@ class ReportingTests(unittest.TestCase):
             self.assertEqual(save_report(path, Path(root) / "report.json"), report)
 
     def test_deployment_selection_uses_validation_and_never_test_scores(self):
-        from unittest.mock import patch
-        from ga.chromosome import NUM_GENES
         with tempfile.TemporaryDirectory() as root:
             compare(["random"], [1, 2], budget=3, population=2, proxy_epochs=1, full_epochs=1, out_dir=root)
             report = build_report(next(Path(root).glob("*/comparison.json")))

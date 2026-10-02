@@ -15,7 +15,7 @@ def main():
     p.add_argument("--proxy-epochs", nargs="+", type=int, default=[5, 10, 20])
     from data.specs import DATASETS
     p.add_argument("--dataset", choices=list(DATASETS), default="covertype")
-    p.add_argument("--device", default="cpu")
+    p.add_argument("--device", default="cuda")
     p.add_argument("--split-seed", type=int, default=42)
     p.add_argument("--smoke", action="store_true")
     p.add_argument("--out-dir", default="experiments/tabular/comparisons")

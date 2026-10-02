@@ -47,7 +47,7 @@ def main():
     p.add_argument("--top-k", type=int, default=3)
     from data.specs import DATASETS
     p.add_argument("--dataset", choices=list(DATASETS), default="covertype")
-    p.add_argument("--device", default="cpu")
+    p.add_argument("--device", default="cuda")
     p.add_argument("--out-dir", default="experiments/tabular/proxy_calibration")
     args = p.parse_args()
     if not 3 <= args.samples <= 1000 or not 1 <= args.top_k <= args.samples or not args.seeds or len(set(args.seeds)) != len(args.seeds):
