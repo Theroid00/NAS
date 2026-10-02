@@ -64,6 +64,8 @@ restarts; completed final retraining is reused. Optimizer/scheduler state and
 partially trained weights are not restored.
 
 Old experiments created before this feature are kept intact but cannot resume.
+Current resumable searches use metadata version 2, including class-balanced metrics.
+Earlier version 1 searches remain readable but cannot resume under this implementation.
 No automatic retry loop or background service is introduced: fix a fatal error
 if needed, then invoke `--resume`.
 

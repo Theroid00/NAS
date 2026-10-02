@@ -6,6 +6,34 @@ This is an **AI/ML engineering portfolio project** focused on reproducible workf
 
 New searches and comparison suites can resume after interruption without retraining completed trials. See [resuming runs](docs/resuming-runs.md) for `--resume` commands and recovery details.
 
+## End-to-end industry demo
+
+Install `requirements-gpu.txt` and `requirements-service.txt`, prepare Covertype,
+then run `python run_portfolio.py --device cuda`. This compares three search
+methods, retrains their winners, selects by full validation, evaluates one held-out
+test checkpoint, and exports a model with its preprocessing and a results report.
+Start `python serve.py --device cuda --artifact PATH_TO_ARTIFACT --report docs/industry-results.json`
+for the dashboard and prediction API at `http://127.0.0.1:8000`.
+See [demo instructions and measured results](docs/industry-demo.md).
+
+The completed RTX 4060 suite evaluated **750 candidates and 15 retrained winners**.
+Mean full validation accuracy was GA **91.66%**, aging **92.53%**, and random
+**90.97%**. The validation-selected model achieved **94.09% test accuracy**;
+these are bounded portfolio results, not a general claim about search superiority.
+
+```mermaid
+flowchart LR
+    A[Training-only preprocessing] --> B[Sequential CUDA search]
+    B --> C[Trial journal and recovery]
+    B --> D[Full winner retraining]
+    D --> E[Validation selection]
+    E --> F[One test evaluation]
+    F --> G[Weights and scaler artifact]
+    G --> H[CUDA prediction API]
+    B --> I[Results dashboard]
+    F --> I
+```
+
 ## Dataset and preprocessing
 
 [UCI Covertype](https://archive.ics.uci.edu/dataset/31/covertype) contains 581,012 rows, 54 features, and seven forest cover classes. It has 10 numerical columns and 44 binary columns. The fixed stratified 60/20/20 split gives 348,607 training rows, 116,202 validation rows, and 116,203 test rows. StandardScaler is fitted exclusively on the numerical columns of the training split; binary columns are preserved. Class counts, scaler statistics, data fingerprint, split seed, and split index fingerprints are recorded. Full split indices can be reconstructed from the fixed dataset ordering and seed and verified against those fingerprints.
@@ -82,7 +110,7 @@ python calibrate_proxy.py --dataset covertype --device cuda --samples 12 --seeds
 
 Calibration measures Spearman rank agreement and top-k overlap between the proxy and longer full-data training, using validation only. Proxy scores use the fixed validation subset; reference scores use the full validation split. This measures the combined fidelity of the smaller training set, validation subset, and shorter training schedule. If agreement is weak, increase training fidelity before the main comparison. Undefined correlations from constant scores are reported as such.
 
-A larger dataset makes this a more informative experiment, but it does not guarantee evolution beats random search. Compare repeated results, uncertainty, and cost. Include a fixed MLP and eventually additional datasets before claiming a general NAS advantage.
+A larger dataset makes this a more informative experiment, but it does not guarantee evolution beats random search. Compare repeated results, uncertainty, and cost. The industry suite compares the three search methods; broader research controls remain in the parked research plan.
 
 ## Individual searches and fixed MLP
 

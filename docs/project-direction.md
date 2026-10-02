@@ -1,6 +1,6 @@
 # Project direction
 
-Updated: 2026-10-02.
+Updated: 2026-10-03.
 
 ## Current goal: an industry AI/ML engineering portfolio
 
@@ -14,7 +14,7 @@ automated model-search pipeline under a realistic single-GPU constraint.
 Random search winning or tying is an acceptable result; the portfolio should
 explain the tradeoffs honestly rather than guarantee that evolution wins.
 
-### Proposed engineering priorities
+### Engineering priorities
 
 1. Make the workflow straightforward: prepare data, run a configurable search,
    compare methods, retrain a winner, and evaluate an untouched test set.
@@ -44,59 +44,18 @@ later test of scalable loading and larger numeric classification workloads.
   metrics are reporting metrics unless an objective change is explicitly chosen.
 - Keep train/validation/test separation and honest, independently checked
   scoring even though publication-level experiments are not required.
-- Continue committing approved work on `codex/reproducible-evolution-nas`.
+- Continue committing approved work on `resume/resume-trial`.
 - The large ten-seed publication suite is a previous proposal, not a committed
   requirement for the industry direction.
-- This document saves the direction only. Metric implementation, new dataset
-  downloads, and benchmark launches still require approval under the user's
-  latest instruction to present the plan before acting.
 
-### Implemented engineering milestone
+### Implemented industry workflow
 
-The user subsequently approved trial-level resume on branch
-`resume/resume-trial`. Individual searches and comparison suites now reuse
-completed trials and reconstruct deterministic search state after interruption.
-See [resuming runs](resuming-runs.md). This milestone does not launch the larger
-benchmark suite or implement the other proposed portfolio features.
+The user approved implementation on `resume/resume-trial`. Class-balanced metrics,
+trial recovery, GPU comparison and finalization, portable model export, a prediction
+API, and an interactive dashboard are implemented. The RTX 4060 suite completed
+750 candidate evaluations and 15 winner retrainings; final test evaluation and
+inference measurements also used CUDA. See [industry-demo.md](industry-demo.md)
+and [industry-results.json](industry-results.json).
 
-## Parked research direction
-
-Return to this section only if research publication becomes a goal again.
-
-Potential question: when does evolution outperform random search on large
-tabular tasks after controlling training noise, evaluation fidelity, and GPU
-time? A possible extension would allocate extra training or repeated seeds to
-uncertain, promising candidates. This overlaps existing work; novelty is not
-established.
-
-Relevant work found during the earlier literature review:
-
-- [pTNAS, ICML 2026](https://proceedings.mlr.press/v306/xing26a.html): tabular
-  architecture search with cheap filtering, staged training, and budget allocation.
-- [R-MF-NAS, June 2026](https://doi.org/10.1145/3774940): proxy-guided search,
-  successive halving, and robustness to proxy selection.
-- [EvoDiff-NAS, August 2026](https://www.sciencedirect.com/science/article/pii/S2210650226001628):
-  diffusion-guided mutations studied using precomputed NAS benchmarks.
-- [AgEBO-Tabular](https://arxiv.org/abs/2010.16358): existing aging evolution
-  combined with hyperparameter optimization for tabular data.
-- [TabArena, NeurIPS 2025](https://proceedings.neurips.cc/paper_files/paper/2025/hash/1697e3fb412da11dc9488249f9e7bbc9-Abstract-Datasets_and_Benchmarks_Track.html):
-  curated datasets and reproducible tabular model benchmarking.
-
-Candidate datasets:
-
-- [HIGGS](https://archive.ics.uci.edu/dataset/280/higgs): 11 million rows,
-  28 numeric features; preserve the documented final 500,000-row test set.
-- [HEPMASS](https://archive.ics.uci.edu/dataset/347/hepmass): 10.5 million rows
-  per variant; related physics tasks, with limited domain diversity versus HIGGS.
-- [Poker Hand](https://archive.ics.uci.edu/dataset/158/poker): 1,025,010 rows,
-  10 card attributes; needs suitable categorical encoding and rare-class handling.
-
-Dataset size alone does not imply that random search will perform poorly.
-Choose datasets before observing comparative results.
-
-The earlier publication proposal was proxy calibration on 12 architectures
-with two training seeds, then three search methods across ten search seeds and
-100 evaluations each, followed by three retraining seeds per winner. It also
-included confidence intervals, multiple datasets, and a random-search plus
-successive-halving control if staged resource allocation were introduced.
-These are parked research ideas, not the current implementation plan.
+The research direction is preserved separately in
+[research-direction.md](research-direction.md) for a future change of goal.
