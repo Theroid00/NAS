@@ -1,6 +1,6 @@
 """Compact MLP search models and exact parameter estimates."""
 from torch import nn
-from data.tabular import INPUT_FEATURES, NUM_CLASSES
+from data.specs import INPUT_FEATURES, NUM_CLASSES
 
 
 class HiddenLayer(nn.Module):
