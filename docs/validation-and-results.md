@@ -7,6 +7,13 @@ against the exported Covertype model. The current cleanup adds four focused test
 for shared winner retraining and command-line device defaults. The complete suite
 is rerun after the refactor; its result is recorded in [maintenance.md](maintenance.md).
 
+After the subsequent export/provenance/environment changes, all **65 tests
+passed** on 2026-10-03 in a fresh isolated GPU environment with the pinned core
+and service packages. Real CUDA setup training, saved-model inference, and API
+prediction passed independently of the unit suite. See [GPU setup](gpu-setup.md)
+and its [recorded evidence](gpu-environment-check.json). These checks do not
+replace or change the historical benchmark measurements below.
+
 The current-state audit also checked the original main-suite JSON/JSONL files:
 
 - Exactly 15 searches, 50 evaluations each, and 750 `ok` candidate outcomes.
@@ -99,6 +106,9 @@ The live endpoint was checked to report `cuda:0`.
 | `test_portfolio.py` | End-to-end finalization, repeated finish without repeated test evaluation, smoke rejection |
 | `test_gpu_serving.py` | Optional real exported-model API/checkpoint parity on CUDA |
 | `test_entrypoints.py` | Shared winner retraining preserves dataset/split, explicit override, invalid-winner rejection, shared CLI delegation, CUDA default and explicit CPU choice |
+| `test_export_recovery.py` | Interrupted/staged export retry, real process-kill recovery, preservation of existing artifacts, and promised-example startup checks |
+| `test_provenance.py` | Startup hashes, changed/added/removed source detection, source-mismatch recovery rejection without saved-record mutation, and mid-suite guards |
+| `test_environment.py` | Exact pinned-version checks and dependency-drift rejection |
 
 Tests use offline Breast Cancer or synthetic Covertype fixtures, not a Covertype
 download. Optional service tests are skipped when service dependencies are absent.

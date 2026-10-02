@@ -61,6 +61,7 @@ explicit `train-mlp` mode; it is not included in the three-method suite.
 | `training/metrics.py` | `classification_metrics(matrix)` derives class-balanced and per-class diagnostics from a square nonnegative confusion matrix |
 | `training/trainer.py` | `train_winner` validates and delegates saved-winner retraining; `full_train` builds searched/baseline models; `train_model` executes full training/checkpoint selection; `evaluate_checkpoint` explicitly records a final test score |
 
+Full training records its implementation fingerprint before training begins.
 The proxy and full loops intentionally remain distinct: proxy scores the final
 epoch without a checkpoint, while full training evaluates each epoch and restores
 the best checkpoint. They share model construction, optimizer constants, seeding,
@@ -74,6 +75,7 @@ would add complexity without removing meaningful duplication.
 | `utils/search_runtime.py` | `validate_budget`, `resolve_device`, `evaluate_task`, `SearchSession`, and `resume_search`; config/provenance checks, private trial seeds, evaluator calls, replay validation, winner archive, and durable records |
 | `utils/persistence.py` | `atomic_json` writes/fsyncs a temporary file and replaces the destination; `RunLock.acquire/release` provides OS-managed process locks |
 | `utils/reproducibility.py` | `set_training_seed`; independent training RNG initialization and deterministic PyTorch settings |
+| `utils/provenance.py` | `source_fingerprint`; relative source-file SHA-256 values and aggregate digest captured before experiments, including uncommitted contents |
 | `utils/results.py` | `load_winner` validates compatible real winners; `latest_winner` finds the newest compatible winner in one directory |
 | `utils/logger.py` | `GenerationLogger`; per-generation/cycle CSV summaries and reconstruction of completed generation timing during resume |
 | `utils/visualiser.py` | Optional `plot_convergence`, `plot_architecture`, `plot_gene_heatmap`, and `plot_comparison_bar`; saved Matplotlib figures, not model-search decisions |
@@ -91,6 +93,7 @@ before changing any of these ordering guarantees.
 | Script | Purpose |
 | --- | --- |
 | `prepare_dataset.py` | Explicit supported-dataset preparation/download |
+| `verify_environment.py` | Exact dependency-pin verification, tiny offline training on the requested device, and optional exported-model/API checks |
 | `main.py` | Individual GA, aging, random search, searched-winner training, optional fixed MLP training, plotting, and individual search resume |
 | `run_comparison.py` | Equal-budget repeated three-method comparisons; optional per-winner full retraining; durable comparison resume |
 | `evaluate_best.py` | Saved-winner retraining or explicit frozen-checkpoint test evaluation |

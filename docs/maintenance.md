@@ -63,13 +63,13 @@ part of the shortest run command.
 
 | Area | Current behavior / gap | Sensible next change if needed |
 | --- | --- | --- |
-| Export recovery | Destination is created before export finishes; interruption can block retry or leave an example marked available but missing | Validate a staged directory and publish it atomically; check promised files on startup |
+| Export recovery | Implemented: staged, validated publication under an OS lock; interrupted attempts can retry; promised examples checked at startup | A hard kill can leave an unused hidden staging folder, without publishing a partial destination |
 | Report regeneration | Plain report output can replace portfolio enrichment at the same default path | Separate plain/enriched outputs or preserve explicitly compatible enrichment; deferred |
 | Dashboard | No selected-model test/inference summary or uncertainty display; only first full-training repeat is inspected | Presentation polish if the user chooses to resume dashboard work; deferred |
-| Fresh-machine delivery | Local environment is verified; no clean-install rehearsal or downloadable weights release | Lock GPU dependencies and verify a clean setup before distributing |
+| Fresh-machine delivery | Core GPU package versions pinned; reusable installation/CUDA check added; see the setup guide for fresh-environment evidence | Downloadable weights release and other OS/driver validation remain optional |
 | Docker | Existing optional image is CPU-only and unbuilt locally | Build/verify only if container delivery becomes a requirement |
-| Source provenance | Packaging hashes are historical; startup records Git revision but not a complete dirty-worktree source snapshot | Capture source fingerprints at the beginning of future searches |
-| Resume | Completed trials recover, partial epochs do not; code changes can affect later evaluations | Keep the training implementation stable during a run; epoch recovery is a separate feature |
+| Source provenance | Implemented: startup relative-file hashes and aggregate digest in search/suite/full-training records; changed sources block recovery | Historical runs retain their original records and require their original recovery implementation |
+| Resume | Completed trials recover, partial epochs do not; individual format 3/suite format 2 enforce source consistency | Epoch recovery is a separate feature; older formats use the original checkout |
 | Paths | Comparison/result files contain original local paths | Add relocation support if distributing raw experiments becomes necessary |
 | Objective | Only validation accuracy drives search | Declare and implement a new shared objective before rerunning all methods |
 | Dataset ingestion | Two named classification datasets; no generic upload/CSV schema | Add ingestion only when a specific dataset/user flow requires it |
@@ -77,7 +77,8 @@ part of the shortest run command.
 | Production serving | Local API, no auth or production monitoring; sequential warm latency only | Treat deployment hardening as a separate scoped task |
 
 The export and plain-report failure cases were reproduced in temporary files during
-the preceding audit. They do not alter the measured search results. Existing
+the preceding audit. Export recovery has since been fixed; report work remains
+deferred. These packaging changes do not alter the measured search results. Existing
 `analysis/` content is untracked user/local material and is left untouched.
 
 ## How to make future changes safely
@@ -102,3 +103,13 @@ documentation links, obsolete-reference searches, and Git whitespace checks.
 After cleanup, **all 55 tests passed**, including CUDA checkpoint/API parity against
 the existing exported Covertype model. Dependency checking found no broken installed
 requirements. No full benchmark or final test-set evaluation was rerun for cleanup.
+
+Subsequent reliability work adds process-kill export recovery, invalid/missing
+example rejection, source snapshot/recovery guards, pinned-package verification,
+and a separate fresh GPU environment check. See [GPU setup](gpu-setup.md).
+
+On 2026-10-03, all **65 tests passed** in the newly installed isolated GPU
+environment. Dependency consistency, real CUDA training, saved-model inference,
+and API prediction also passed on the RTX 4060. Exact package/device evidence is
+saved in [gpu-environment-check.json](gpu-environment-check.json). No full search
+suite or held-out test evaluation was rerun for these reliability changes.

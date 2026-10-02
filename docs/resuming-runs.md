@@ -64,8 +64,12 @@ restarts; completed final retraining is reused. Optimizer/scheduler state and
 partially trained weights are not restored.
 
 Old experiments created before this feature are kept intact but cannot resume.
-Current resumable searches use metadata version 2, including class-balanced metrics.
-Earlier version 1 searches remain readable but cannot resume under this implementation.
+Current resumable searches use metadata version 3, including startup source fingerprints.
+Comparison recovery uses manifest version 2. Earlier search versions 1/2 and
+comparison version 1 remain readable but require their original implementation
+for recovery; completed old comparisons can still be packaged with `--comparison`.
+New recovery checks source hashes before writing records or reusing trials, so
+changed training/controller code cannot be mixed into the same experiment.
 No automatic retry loop or background service is introduced: fix a fatal error
 if needed, then invoke `--resume`.
 

@@ -35,10 +35,11 @@ Restart with another artifact to change the served model.
 | `GET /docs` | FastAPI-generated interactive API documentation |
 | `GET /openapi.json` | FastAPI-generated API schema |
 
-The health endpoint does not execute a forward pass or validate every promised
-auxiliary file. A partial export with an advertised but missing example can report
-healthy and later fail `/example`. This known limitation is documented in
-[maintenance.md](maintenance.md).
+The health endpoint does not execute a forward pass. Startup now checks every
+advertised example for existence, checksum when present, and valid request shape.
+A partial artifact with a missing promised example fails startup rather than
+reporting healthy and later failing `/example`. New exports publish only after
+these checks. Removing files externally after startup is outside that guarantee.
 
 ## Prediction input
 

@@ -33,6 +33,10 @@ This is 750 candidate evaluations and 15 retrainings. Experiments train candidat
 sequentially on one GPU. Training CLIs default to CUDA and fail when unavailable;
 `--device cpu` is explicit. Library functions retain small offline CPU defaults.
 Completed trials can be recovered without retraining; see [recovery](docs/resuming-runs.md).
+The GPU package set is pinned. Use `python verify_environment.py --device cuda`
+to check installed versions and execute a tiny real CUDA training check; see
+[fresh GPU setup](docs/gpu-setup.md). New runs record startup source hashes and
+reject recovery with changed implementation files.
 
 Retrain a specific saved winner with `evaluate_best.py --json ... --validation-only`.
 After freezing the choice, use `evaluate_best.py --test-checkpoint ...` to evaluate

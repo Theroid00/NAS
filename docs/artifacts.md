@@ -62,14 +62,16 @@ resolved device, status, paths, and resume format version. Real searches additio
 save dataset metadata and proxy protocol hashes. Progress updates include counts,
 elapsed time, and accumulated evaluation seconds. Recovery adds a resume history.
 
-The current `resume_version` is 2. A metadata file alone is insufficient to recover:
+The current `resume_version` is 3. A metadata file alone is insufficient to recover:
 its journal and data must also be available. Exact dependency versions, dataset
 provenance, subset hashes, original configuration, and replay decisions are checked.
-Source hashes are not enforced at resume startup; a Git change is recorded in
-resume history rather than automatically rejected. Controller divergence during
-replay is rejected, but changing the training implementation alone could mix old
-and new evaluations without such divergence. Keep one training implementation
-throughout a run.
+Startup `source_fingerprint` records relative paths and SHA-256 values for all
+Python modules in data/ga/models/training/utils and the six experiment entry points,
+plus a digest of the complete file-hash map. It includes uncommitted file contents.
+Changed, added, or removed source files block recovery before journal/metadata
+mutation. Documentation, saved outputs, and presentation-only modules are excluded.
+Git history can change without blocking recovery when these source contents match.
+Controller divergence during replay is still checked separately.
 
 `elapsed_s` excludes intentional gaps between invocations. A hard kill can lose
 the unrecorded time of its active candidate. `total_evaluation_seconds` sums saved
@@ -104,7 +106,11 @@ be more precise than CSV and is required to validate exact ties or resume.
 The manifest records methods, population, proxy/full epochs, subset sizes, device,
 parameter limit, candidate budget, smoke status, split seed, search seeds,
 full-training seeds, runs, summaries, and suite status. Its comparison resume format
-is version 1, distinct from individual search metadata version 2.
+is version 2, distinct from individual search metadata version 3.
+
+Comparison startup records the same source fingerprint and rejects a source
+mismatch even when every saved search is already complete. Source changes between
+methods stop the suite before starting the next search.
 
 Each run row points to its winner and records proxy fitness/metrics, counts/time,
 and completed full-training result paths. Updates occur after each search and
@@ -129,6 +135,8 @@ size, train/validation sample counts, checkpoint policy, and resolved device.
 fills them by atomically replacing this result JSON. The `.pt` file stores the
 model `state_dict` for the chosen best-validation epoch, not optimizer/scheduler
 state. It is a trusted local PyTorch weights file loaded with `weights_only=True`.
+New full-training results record their own source fingerprint at training startup;
+retraining an old winner does not rewrite the search's historical source record.
 
 Full-training JSON snapshots are atomic; epoch checkpoint writes use `torch.save`
 directly. Interrupted training therefore is not an epoch-recovery mechanism.
@@ -166,9 +174,13 @@ model/source labels, model ID, device, and elapsed milliseconds. CUDA output is
 transferred back to the CPU before JSON response construction.
 
 These exports can be moved independently from training runs. They are ignored by
-Git; the repository currently provides no downloadable model release. Export is
-not transactional across the directory: a failed export can leave a partial
-directory that blocks retry. See the maintenance guide; this cleanup does not fix it.
+Git; the repository currently provides no downloadable model release. Export now
+writes into a unique same-parent staging directory under a per-destination OS lock,
+validates weights/preprocessing and any promised example, then publishes by rename.
+Ordinary failures clean staging and allow retry. A killed process can leave a hidden
+staging directory, but no partially ready destination; a retry uses a fresh staging
+directory, and the OS releases the lock. Existing destination artifacts are preserved.
+New examples have SHA-256 checksums; missing/corrupt promised examples fail startup.
 
 ## Optional report and delivery record
 

@@ -16,6 +16,7 @@ search objective. The current goal is a readable AI/ML engineering portfolio.
 | [Data and training](data-and-training.md) | Datasets, splits, preprocessing, proxy evaluation, retraining, seeds, and metric formulas |
 | [Codebase map](codebase-map.md) | Responsibilities and important functions of every maintained module and script |
 | [Command reference](commands.md) | Installation, GPU defaults, all entry points, important flags, examples, and troubleshooting |
+| [Pinned GPU setup](gpu-setup.md) | Fresh environment installation, exact dependency checks, CUDA training/inference verification, and saved evidence |
 | [Artifacts and provenance](artifacts.md) | JSON/JSONL/CSV/checkpoint formats, file relationships, exports, and reproducibility boundaries |
 | [Optional inference API](inference-api.md) | Saved preprocessing, request/response contract, routes, errors, timing, and local deployment limits |
 | [Interrupted-run recovery](resuming-runs.md) | Durable trial recovery, deterministic replay, locks, failure handling, and version boundaries |

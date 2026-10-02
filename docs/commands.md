@@ -13,9 +13,11 @@ python prepare_dataset.py --dataset covertype
 ```
 
 The measured environment used torch 2.14.1+cu130 on an RTX 4060 Laptop GPU with
-a CUDA-compatible NVIDIA driver. `requirements-gpu.txt` pins torch but includes
-broad core dependency constraints; it is not a complete GPU environment lockfile.
-The measured versions are preserved in `industry-results.json`. Installing an
+a CUDA-compatible NVIDIA driver. `requirements-gpu.txt` now pins the complete
+tested Windows/Python 3.12 core GPU package set, including transitive dependencies.
+Optional service dependencies are pinned separately. Other OS/Python combinations
+are not covered by this installation check. The measured benchmark versions remain
+preserved in `industry-results.json`. Installing an
 unavailable CUDA build or an incompatible driver cannot be fixed by adding a
 device flag alone. No command silently falls back to CPU after CUDA is requested.
 
@@ -135,6 +137,7 @@ measured models.
 | `benchmark_search.py --benchmark PATH_TO_NATS_ARCHIVE` | Requires optional benchmark dependencies/archive; defaults to 30 seeds, budget 300, population 20, stored 12-epoch results; optional `--hp 200`; no live tabular GPU training |
 | `generate_comparison.py --results ...` | Explicit full-training JSONs; optional labels; metric defaults to test accuracy or can be `best_val_accuracy`; all requested scores must exist and belong to the same dataset |
 | `demo_replay.py --csv PATH_TO_GENERATION_CSV` | Animates an existing log; requires an interactive plotting environment |
+| `verify_environment.py --device cuda` | Checks exact GPU package pins and executes one offline Breast Cancer training epoch on CUDA; optional `--service`, `--artifact`, and `--out` |
 
 Ablations, sweeps, calibration, and the NATS lookup save their own JSON summaries;
 they do not have the comparison suite's durable recovery interface. Use `--help`
@@ -181,6 +184,6 @@ are deferred at the user's request.
 | Tied search scores | Fixed initialization candidates may match; discrete accuracy can tie; inspect loss/architecture and trial records |
 | No valid candidate | Inspect status/error fields, parameter limits, memory exhaustion, and divergence |
 | Resume version/dependency mismatch | Preserve the original environment or start a new run; do not edit metadata to force compatibility |
-| Export destination already exists | Do not overwrite an artifact blindly; inspect completeness or choose a new directory; crash recovery is a known gap |
+| Export destination already exists | Complete artifacts are intentionally preserved; choose another directory. Failed new exports do not publish the destination and can retry the same name |
 | Model weights checksum differs | Artifact is corrupted or weights/manifest do not belong together |
 | Prediction HTTP 422 | Supply 1–1024 numeric finite rows in exact feature order; Covertype's last 44 values must be binary |

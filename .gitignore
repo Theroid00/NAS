@@ -9,6 +9,7 @@ data/tabular_cache/
 
 # Local environments and new experimental outputs
 .venv/
+.venv-gpu-check/
 experiments/comparisons/
 experiments/proxy_calibration/
 
