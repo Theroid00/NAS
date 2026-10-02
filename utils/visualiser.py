@@ -99,6 +99,7 @@ def plot_architecture(
     arch: dict,
     out_path: str = "experiments/best_architectures/architecture.png",
     show: bool = False,
+    dataset: str = "breast_cancer_wisconsin",
 ) -> str:
     """
     Draw a simple block diagram of the given architecture dict.
@@ -114,7 +115,9 @@ def plot_architecture(
     os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
 
     if "num_layers" in arch:
-        labels = ["Input\n30 scaled features"] + [f"Hidden {i}\n{arch[f'width_{i}']} units" for i in range(1, arch["num_layers"] + 1)] + ["Output\n2 logits"]
+        from data.specs import dataset_spec
+        spec = dataset_spec(dataset)
+        labels = [f"Input\n{spec['input_features']} features"] + [f"Hidden {i}\n{arch[f'width_{i}']} units" for i in range(1, arch["num_layers"] + 1)] + [f"Output\n{spec['num_classes']} logits"]
         fig, ax = plt.subplots(figsize=(max(8, len(labels) * 2), 3))
         ax.axis("off")
         ax.set_xlim(-0.7, len(labels) - 0.3)

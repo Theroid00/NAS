@@ -5,11 +5,14 @@ from training.config import RANDOM_SEED
 
 def parse_args(argv=None):
     p = argparse.ArgumentParser(description=__doc__)
+    from data.specs import DATASETS
+    p.add_argument("--dataset", choices=list(DATASETS), default="covertype")
     p.add_argument("--mode", choices=["nas", "aging", "random-search", "train-best", "train-mlp", "plot"], default="nas")
     p.add_argument("--pop", type=int, default=20)
     p.add_argument("--gen", type=int, default=15)
     p.add_argument("--proxy-epochs", type=int, default=20)
-    p.add_argument("--proxy-size", type=int, default=0, help="0 uses all training rows")
+    p.add_argument("--validation-size", type=int, default=None, help="Default depends on dataset; 0 uses all validation rows")
+    p.add_argument("--proxy-size", type=int, default=None, help="Default depends on dataset; 0 uses all training rows")
     p.add_argument("--crossover-p", type=float, default=0.8)
     p.add_argument("--mutation-p", type=float, default=0.1)
     p.add_argument("--tournament-k", type=int, default=5)
@@ -22,7 +25,7 @@ def parse_args(argv=None):
     p.add_argument("--validation-only", action="store_true")
     p.add_argument("--smoke", action="store_true")
     p.add_argument("--seed", type=int, default=RANDOM_SEED)
-    p.add_argument("--split-seed", type=int, default=RANDOM_SEED)
+    p.add_argument("--split-seed", type=int, default=None, help="42 for search; saved split seed when retraining")
     p.add_argument("--log-dir", default="experiments/tabular/generation_logs")
     p.add_argument("--save-dir", default="experiments/tabular/best_architectures")
     return p.parse_args(argv)
@@ -31,7 +34,8 @@ def parse_args(argv=None):
 def main():
     args = parse_args()
     common = dict(device=args.device, proxy_epochs=args.proxy_epochs, smoke=args.smoke,
-                  seed=args.seed, split_seed=args.split_seed, proxy_size=args.proxy_size,
+                  seed=args.seed, split_seed=args.split_seed if args.split_seed is not None else RANDOM_SEED,
+                  proxy_size=args.proxy_size, dataset=args.dataset, validation_size=args.validation_size,
                   max_params=args.max_params,
                   log_dir=args.log_dir, save_dir=args.save_dir)
     if args.mode == "nas":
@@ -52,9 +56,9 @@ def main():
         record = {} if args.mode == "train-mlp" else load_winner(args.best_json or latest_winner(args.save_dir))
         result = full_train(record.get("best_chromosome"), baseline=args.mode == "train-mlp",
                             device=args.device, epochs=args.full_epochs, seed=args.seed,
-                            split_seed=args.split_seed, save_dir=args.save_dir,
+                            split_seed=args.split_seed if args.split_seed is not None else record.get("hyperparams", {}).get("split_seed", RANDOM_SEED), save_dir=args.save_dir,
                             run_id=record.get("run_id", "mlp"),
-                            evaluate_test=not args.validation_only)
+                            evaluate_test=not args.validation_only, dataset=record.get("dataset_name", args.dataset))
         print(result["results_path"])
         return
     else:
@@ -68,7 +72,7 @@ def main():
         from utils.visualiser import plot_convergence, plot_architecture
         if result["log_path"]:
             plot_convergence(result["log_path"])
-        plot_architecture(result["best_arch"], str(Path(args.save_dir) / f"architecture_{result['run_id']}.png"))
+        plot_architecture(result["best_arch"], str(Path(args.save_dir) / f"architecture_{result['run_id']}.png"), dataset=args.dataset)
     except ImportError as error:
         print(f"Plotting dependencies unavailable: {error}")
 

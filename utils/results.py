@@ -12,7 +12,8 @@ def load_winner(path):
         raise ValueError("Unsupported architecture schema; migrate explicitly before training")
     if "search_space" in record and record["search_space"] != SEARCH_SPACE:
         raise ValueError("Saved search space differs from this implementation")
-    if record.get("dataset_name") != "breast_cancer_wisconsin":
+    from data.specs import DATASETS
+    if record.get("dataset_name") not in DATASETS:
         raise ValueError("Saved winner belongs to a different dataset")
     arch = decode(record["best_chromosome"])
     if "best_arch" in record and record["best_arch"] != arch:

@@ -34,10 +34,10 @@ def resolve_device(device):
     return f"cuda:{index}"
 
 
-def evaluate_task(chromosome, device, proxy_epochs, seed, split_seed, proxy_size, max_params):
+def evaluate_task(chromosome, device, proxy_epochs, seed, split_seed, proxy_size, max_params, dataset, validation_size):
     from training.evaluator import evaluate_trial
     return evaluate_trial(chromosome, device, proxy_epochs, seed=seed,
-                          split_seed=split_seed, proxy_size=proxy_size, max_params=max_params)
+                          split_seed=split_seed, proxy_size=proxy_size, max_params=max_params, dataset=dataset, validation_size=validation_size)
 
 
 class SearchSession:
@@ -63,7 +63,7 @@ class SearchSession:
             except importlib.metadata.PackageNotFoundError:
                 versions[name] = None
         self.metadata = {"run_id": self.run_id, "method": method, "schema_version": SCHEMA_VERSION,
-                         "dataset_name": "breast_cancer_wisconsin", "search_space": SEARCH_SPACE, "smoke": smoke, "config": config,
+                         "dataset_name": self.config["dataset"], "search_space": SEARCH_SPACE, "smoke": smoke, "config": config,
                          "python": platform.python_version(), "platform": platform.platform(),
                          "versions": versions, "status": "running"}
         try:
@@ -86,9 +86,15 @@ class SearchSession:
             if not self.smoke and not self.config.get("injected_evaluator"):
                 # Fail on dataset/infrastructure errors before spending the search budget.
                 from data.tabular import get_proxy_loaders, dataset_metadata
-                self.metadata["dataset"] = dataset_metadata(self.config["split_seed"])
+                self.metadata["dataset"] = dataset_metadata(self.config["split_seed"], self.config["dataset"])
                 self._write_metadata()
-                get_proxy_loaders(proxy_size=self.config["proxy_size"], seed=self.config["split_seed"])
+                train, val = get_proxy_loaders(proxy_size=self.config["proxy_size"], seed=self.config["split_seed"],
+                                               dataset=self.config["dataset"], validation_size=self.config["validation_size"])
+                self.metadata["proxy_protocol"] = {"training_samples": len(train.dataset), "validation_samples": len(val.dataset),
+                                                    "batch_size": train.batch_size,
+                                                    "train_indices_sha256": hashlib.sha256(train.dataset.row_indices.tobytes()).hexdigest(),
+                                                    "validation_indices_sha256": hashlib.sha256(val.dataset.row_indices.tobytes()).hexdigest()}
+                self._write_metadata()
         except BaseException as error:
             self.__exit__(type(error), error, error.__traceback__)
             raise
@@ -107,11 +113,11 @@ class SearchSession:
             trial_id = self.count + offset + 1
             device = self.device
             args = (list(chromosome), device, self.config["proxy_epochs"], self._seed(trial_id),
-                    self.config["split_seed"], self.config["proxy_size"], self.config.get("max_params"))
+                    self.config["split_seed"], self.config["proxy_size"], self.config.get("max_params"), self.config["dataset"], self.config["validation_size"])
             tasks.append((trial_id, args))
         fitnesses = []
         for trial_id, args in tasks:
-            chromosome, device, epochs, seed, split_seed, proxy_size, max_params = args
+            chromosome, device, epochs, seed, split_seed, proxy_size, max_params, dataset, validation_size = args
             t0 = time.perf_counter()
             try:
                 if self.smoke:
@@ -132,7 +138,7 @@ class SearchSession:
             record = {**outcome, "trial_id": trial_id, "generation": generation,
                       "chromosome": chromosome, "arch": decode(chromosome), "seed": seed,
                       "device": device, "split_seed": split_seed, "proxy_size": proxy_size,
-                      "proxy_epochs": epochs, "elapsed_s": outcome.get("elapsed_s", time.perf_counter() - t0)}
+                      "dataset_name": dataset, "validation_size": validation_size, "proxy_epochs": epochs, "elapsed_s": outcome.get("elapsed_s", time.perf_counter() - t0)}
             self._record(record)
             if record["status"] in ("ok", "smoke") and (self.best is None or fit > self.best["fitness"]):
                 self.best = record
@@ -149,10 +155,10 @@ class SearchSession:
         if self.best is None:
             raise RuntimeError("No valid candidate was evaluated; inspect trial failures")
         result = {"run_id": self.run_id, "method": self.method, "schema_version": SCHEMA_VERSION,
-                  "dataset_name": "breast_cancer_wisconsin", "search_space": SEARCH_SPACE, "smoke": self.smoke,
+                  "dataset_name": self.config["dataset"], "search_space": SEARCH_SPACE, "smoke": self.smoke,
                   "winner_policy": "best_observed_validation_accuracy",
                   "best_chromosome": self.best["chromosome"], "best_arch": self.best["arch"],
-                  "best_fitness": self.best["fitness"], "best_trial_id": self.best["trial_id"],
+                  "best_fitness": self.best["fitness"], "best_validation_loss": self.best.get("validation_loss"), "best_trial_id": self.best["trial_id"],
                   "hyperparams": self.config, "evaluation_count": self.count,
                   "elapsed_s": time.perf_counter() - self.started,
                   "total_evaluation_seconds": self.evaluation_seconds,

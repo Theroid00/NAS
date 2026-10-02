@@ -40,7 +40,7 @@ def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
-def build_baseline_mlp():
+def build_baseline_mlp(input_features=INPUT_FEATURES, num_classes=NUM_CLASSES):
     return build_model({"num_layers": 2, "width_1": 64, "width_2": 32,
                         "activation": "relu", "dropout": 0.1,
-                        "layer_norm": False, "use_residual": False})
+                        "layer_norm": False, "use_residual": False}, input_features, num_classes)

@@ -11,15 +11,17 @@ from utils.search_runtime import SearchSession, validate_budget
 
 def run_aging_evolution(n_evaluations=300, population_size=20, tournament_k=5,
                        proxy_epochs=20, device="cpu", smoke=False, seed=42, split_seed=42,
-                       proxy_size=0, max_params=None,
+                       proxy_size=None, max_params=None,
                        log_dir="experiments/tabular/generation_logs", save_dir="experiments/tabular/best_architectures",
-                       evaluator=None):
+                       evaluator=None, dataset="breast_cancer_wisconsin", validation_size=None):
     validate_budget(n_evaluations, proxy_epochs, population_size, tournament_k)
-    if type(proxy_size) is not int or not 0 <= proxy_size <= 341 or max_params is not None and max_params < 1:
+    from data.specs import search_sizes
+    proxy_size, validation_size = search_sizes(dataset, proxy_size, validation_size)
+    if max_params is not None and max_params < 1:
         raise ValueError("Invalid proxy size or parameter limit")
     config = dict(evaluation_budget=n_evaluations, population_size=population_size,
                   tournament_k=tournament_k, proxy_epochs=proxy_epochs, device=device,
-                  seed=seed, split_seed=split_seed, proxy_size=proxy_size, max_params=max_params,
+                  seed=seed, split_seed=split_seed, proxy_size=proxy_size, validation_size=validation_size, dataset=dataset, max_params=max_params,
                   injected_evaluator=evaluator is not None,
                   mutation_policy="one_active_choice", replacement_policy="oldest_first")
     rng = random.Random(seed)

@@ -41,15 +41,20 @@ def main():
     p.add_argument("--sample-seed", type=int, default=42)
     p.add_argument("--split-seed", type=int, default=42)
     p.add_argument("--proxy-epochs", type=int, default=20)
-    p.add_argument("--proxy-size", type=int, default=0, help="0 uses all training rows")
+    p.add_argument("--validation-size", type=int, default=None, help="Default depends on dataset; 0 uses all validation rows")
+    p.add_argument("--proxy-size", type=int, default=None, help="Default depends on dataset; 0 uses all training rows")
     p.add_argument("--long-epochs", type=int, default=100)
     p.add_argument("--top-k", type=int, default=3)
+    from data.specs import DATASETS
+    p.add_argument("--dataset", choices=list(DATASETS), default="covertype")
     p.add_argument("--device", default="cpu")
     p.add_argument("--out-dir", default="experiments/tabular/proxy_calibration")
     args = p.parse_args()
     if not 3 <= args.samples <= 1000 or not 1 <= args.top_k <= args.samples or not args.seeds or len(set(args.seeds)) != len(args.seeds):
         p.error("Use at least three samples, distinct training seeds, and top-k within sample count")
-    if args.proxy_epochs < 1 or args.long_epochs <= args.proxy_epochs or not 0 <= args.proxy_size <= 341:
+    from data.specs import search_sizes
+    args.proxy_size, args.validation_size = search_sizes(args.dataset, args.proxy_size, args.validation_size)
+    if args.proxy_epochs < 1 or args.long_epochs <= args.proxy_epochs:
         p.error("Use positive proxy epochs, longer reference training, and a valid proxy size")
     from training.evaluator import evaluate_trial
     from training.trainer import full_train
@@ -79,13 +84,13 @@ def main():
             result["candidates"].append(row)
             for seed in args.seeds:
                 proxy = evaluate_trial(chromosome, args.device, args.proxy_epochs, seed=seed,
-                                       split_seed=args.split_seed, proxy_size=args.proxy_size)
+                                       split_seed=args.split_seed, proxy_size=args.proxy_size, dataset=args.dataset, validation_size=args.validation_size)
                 if proxy["status"] != "ok":
                     row["repeats"].append({"seed": seed, "proxy": proxy, "reference": None})
                     save()
                     continue
                 full = full_train(chromosome, device=args.device, epochs=args.long_epochs, seed=seed,
-                                  split_seed=args.split_seed, evaluate_test=False, save_dir=str(root),
+                                  split_seed=args.split_seed, evaluate_test=False, dataset=args.dataset, save_dir=str(root),
                                   run_id=f"candidate{index + 1}_seed{seed}")
                 row["repeats"].append({"seed": seed, "proxy": proxy,
                                        "reference": {"validation_accuracy": full["best_val_accuracy"],

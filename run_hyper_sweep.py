@@ -13,6 +13,8 @@ def main():
     p.add_argument("--budget", type=int, default=150)
     p.add_argument("--populations", nargs="+", type=int, default=[10, 20, 30])
     p.add_argument("--proxy-epochs", nargs="+", type=int, default=[5, 10, 20])
+    from data.specs import DATASETS
+    p.add_argument("--dataset", choices=list(DATASETS), default="covertype")
     p.add_argument("--device", default="cpu")
     p.add_argument("--split-seed", type=int, default=42)
     p.add_argument("--smoke", action="store_true")
@@ -31,7 +33,7 @@ def main():
                 for epochs in args.proxy_epochs:
                     directory = root / f"pop{population}_epochs{epochs}" / str(seed)
                     run = run_nas(evaluation_budget=args.budget, population_size=population,
-                                  proxy_epochs=epochs, device=args.device, seed=seed,
+                                  proxy_epochs=epochs, device=args.device, dataset=args.dataset, seed=seed,
                                   split_seed=args.split_seed, smoke=args.smoke,
                                   log_dir=str(directory), save_dir=str(directory))
                     result["runs"].append({"population": population, "proxy_epochs": epochs, "seed": seed,

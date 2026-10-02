@@ -12,20 +12,22 @@ def run_nas(device="cpu", population_size=20, n_generations=15, proxy_epochs=20,
             crossover_prob=0.8, mutation_prob=0.1, tournament_k=5, n_elites=2,
             log_dir="experiments/tabular/generation_logs",
             save_dir="experiments/tabular/best_architectures", smoke=False, seed=42,
-            split_seed=42, proxy_size=0, max_params=None, evaluator=None,
-            evaluation_budget=None):
+            split_seed=42, proxy_size=None, max_params=None, evaluator=None,
+            evaluation_budget=None, dataset="breast_cancer_wisconsin", validation_size=None):
     budget = evaluation_budget if evaluation_budget is not None else population_size * n_generations
     validate_budget(budget, proxy_epochs, population_size, tournament_k)
     if n_generations < 1 or not 0 <= n_elites <= population_size:
         raise ValueError("Generations must be positive and elites within the population size")
     if not 0 <= crossover_prob <= 1 or not 0 <= mutation_prob <= 1:
         raise ValueError("Operator probabilities must be between zero and one")
-    if type(proxy_size) is not int or not 0 <= proxy_size <= 341 or max_params is not None and max_params < 1:
-        raise ValueError("Proxy size must be 0 (all rows) or within 1..341; parameter limit must be positive")
+    from data.specs import search_sizes
+    proxy_size, validation_size = search_sizes(dataset, proxy_size, validation_size)
+    if max_params is not None and max_params < 1:
+        raise ValueError("Parameter limit must be positive")
     config = dict(device=device, population_size=population_size, n_generations=(budget + population_size - 1) // population_size,
                   proxy_epochs=proxy_epochs, crossover_prob=crossover_prob, mutation_prob=mutation_prob,
                   tournament_k=tournament_k, n_elites=n_elites,
-                  seed=seed, split_seed=split_seed, proxy_size=proxy_size, max_params=max_params,
+                  seed=seed, split_seed=split_seed, proxy_size=proxy_size, validation_size=validation_size, dataset=dataset, max_params=max_params,
                   evaluation_budget=budget, injected_evaluator=evaluator is not None,
                   adaptive_mutation={"patience": 3, "multiplier": 2, "cap": 0.3})
     rng = random.Random(seed)

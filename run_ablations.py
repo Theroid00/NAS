@@ -16,6 +16,8 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--seeds", nargs="+", type=int, default=[42, 43, 44])
     p.add_argument("--budget", type=int, default=200)
+    from data.specs import DATASETS
+    p.add_argument("--dataset", choices=list(DATASETS), default="covertype")
     p.add_argument("--device", default="cpu")
     p.add_argument("--proxy-epochs", type=int, default=20)
     p.add_argument("--split-seed", type=int, default=42)
@@ -33,7 +35,7 @@ def main():
             for name, settings in CONFIGS.items():
                 directory = root / name / str(seed)
                 run = run_nas(evaluation_budget=args.budget, proxy_epochs=args.proxy_epochs,
-                              device=args.device, seed=seed, split_seed=args.split_seed,
+                              device=args.device, dataset=args.dataset, seed=seed, split_seed=args.split_seed,
                               smoke=args.smoke, log_dir=str(directory), save_dir=str(directory), **settings)
                 result["runs"].append({"name": name, "seed": seed, "best_fitness": run["best_fitness"],
                                        "evaluation_count": run["evaluation_count"], "winner_path": run["save_path"]})

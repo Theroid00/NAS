@@ -5,14 +5,16 @@ from utils.search_runtime import SearchSession, validate_budget
 
 
 def run_random_search(n_evaluations=300, device="cpu", proxy_epochs=20, smoke=False,
-                      seed=42, split_seed=42, proxy_size=0, max_params=None,
+                      seed=42, split_seed=42, proxy_size=None, max_params=None,
                       log_dir="experiments/tabular/generation_logs",
-                      save_dir="experiments/tabular/best_architectures", evaluator=None):
+                      save_dir="experiments/tabular/best_architectures", evaluator=None, dataset="breast_cancer_wisconsin", validation_size=None):
     validate_budget(n_evaluations, proxy_epochs)
-    if type(proxy_size) is not int or not 0 <= proxy_size <= 341 or max_params is not None and max_params < 1:
+    from data.specs import search_sizes
+    proxy_size, validation_size = search_sizes(dataset, proxy_size, validation_size)
+    if max_params is not None and max_params < 1:
         raise ValueError("Invalid proxy size or parameter limit")
     config = dict(evaluation_budget=n_evaluations, proxy_epochs=proxy_epochs, device=device,
-                  seed=seed, split_seed=split_seed, proxy_size=proxy_size, max_params=max_params,
+                  seed=seed, split_seed=split_seed, proxy_size=proxy_size, validation_size=validation_size, dataset=dataset, max_params=max_params,
                   injected_evaluator=evaluator is not None)
     rng = random.Random(seed)
     with SearchSession("random", config, log_dir, save_dir, smoke, evaluator) as session:

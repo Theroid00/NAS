@@ -5,6 +5,7 @@
 # Datasets
 data/cifar10_data/
 data/benchmarks/
+data/tabular_cache/
 
 # Local environments and new experimental outputs
 .venv/
