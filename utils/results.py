@@ -1,0 +1,29 @@
+"""Validate saved architecture provenance before launching expensive training."""
+import json
+from pathlib import Path
+from ga.chromosome import decode, SCHEMA_VERSION, SEARCH_SPACE
+
+
+def load_winner(path):
+    record = json.loads(Path(path).read_text(encoding="utf-8"))
+    if record.get("smoke") or record.get("status") == "failed":
+        raise ValueError("Smoke/failed results cannot be used for full training")
+    if record.get("schema_version", SCHEMA_VERSION) != SCHEMA_VERSION:
+        raise ValueError("Unsupported architecture schema; migrate explicitly before training")
+    if "search_space" in record and record["search_space"] != SEARCH_SPACE:
+        raise ValueError("Saved search space differs from this implementation")
+    arch = decode(record["best_chromosome"])
+    if "best_arch" in record and record["best_arch"] != arch:
+        raise ValueError("Saved chromosome and architecture do not agree")
+    record["best_arch"] = arch
+    return record
+
+
+def latest_winner(directory):
+    for path in sorted(Path(directory).glob("best_*.json"), reverse=True):
+        try:
+            load_winner(path)
+            return str(path)
+        except (ValueError, KeyError, TypeError):
+            continue
+    raise FileNotFoundError(f"No compatible real search winner in {directory}")
