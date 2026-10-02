@@ -2,6 +2,11 @@
 
 Updated: 2026-10-03.
 
+Current emphasis: code cleanup and detailed documentation. The user has deferred
+dashboard and report-generation work. The existing optional presentation components
+remain, but further UI/report features are outside the current task. Start with
+[the documentation index](README.md) and [cleanup notes](maintenance.md).
+
 ## Current goal: an industry AI/ML engineering portfolio
 
 This project supports applications for software engineering roles, especially

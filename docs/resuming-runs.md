@@ -84,6 +84,9 @@ configuration changes, dataset changes, active-run locking, abrupt process death
 comparison recovery, and the final-result/manifest write gap. A CUDA test trains
 real Breast Cancer MLPs and checks that only unfinished trials run after resume.
 
-Validation on the RTX 4060 environment: all 39 tests passed, including the CUDA
+At the initial resume milestone on the RTX 4060 environment, all 39 tests passed, including the CUDA
 test. Both `main.py --resume` and `run_comparison.py --resume` also passed
 end-to-end CLI checks using explicitly marked smoke artifacts.
+
+The later cleanup passes 55 tests, including recovery and CUDA artifact parity;
+see [validation and results](validation-and-results.md).

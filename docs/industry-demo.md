@@ -87,9 +87,10 @@ validation accuracy; the extra metrics reveal rare-class performance.
 
 The unit suite covers scoring, checkpoint restoration, deterministic recovery,
 artifact/API parity, request validation, report aggregation, and idempotent finalization.
-All 51 tests passed locally, including GPU checkpoint/API parity against the
+The original 51 tests passed locally, including GPU checkpoint/API parity against the
 exported Covertype artifact. The live HTTP endpoint and dashboard prediction
 were also verified to return `device: cuda:0`.
+The subsequent code cleanup passes 55 tests; see [current validation](validation-and-results.md).
 To also verify the exported model on the GPU without retraining:
 
 ```powershell
