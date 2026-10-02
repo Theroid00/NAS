@@ -1,0 +1,10 @@
+.git
+.venv
+analysis
+experiments
+data/tabular_cache
+data/cifar10_data
+data/benchmarks
+**/__pycache__
+*.pt
+*.pth

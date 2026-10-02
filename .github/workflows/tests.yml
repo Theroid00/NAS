@@ -10,6 +10,6 @@ jobs:
           python-version: '3.12'
           cache: pip
           cache-dependency-path: requirements-tested-cpu.txt
-      - run: python -m pip install -r requirements-tested-cpu.txt
+      - run: python -m pip install -r requirements-tested-cpu.txt -r requirements-service.txt
       - run: python -m unittest discover -s tests -v
       - run: python run_comparison.py --smoke --budget 7 --population 3 --seeds 42 43
