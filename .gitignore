@@ -41,3 +41,6 @@ ehthumbs.db
 
 # Raw console logs
 PS DNAS cd .nas-genetic.txt
+
+# Tabular runs are separate from historical CIFAR outputs
+experiments/tabular/

@@ -98,16 +98,17 @@ def mutate(chromosome: List[int], prob: float = 0.1, rng=None) -> List[int]:
 
 
 def mutate_active(chromosome, rng=None):
-    """Change exactly one expressed choice, excluding duplicate average pooling."""
+    """Change exactly one expressed MLP choice."""
     from ga.chromosome import decode, GENE_NAMES
     rng = rng or random
     arch = decode(chromosome)
     active = [i for i, name in enumerate(GENE_NAMES)
-              if not name.startswith("filters_") or int(name.split("_")[1]) <= arch["num_blocks"]]
+              if not name.startswith("width_") or int(name.split("_")[1]) <= arch["num_layers"]]
+    widths = [30] + [arch[f"width_{j}"] for j in range(1, arch["num_layers"] + 1)]
+    if not any(a == b for a, b in zip(widths, widths[1:])):
+        active.remove(GENE_NAMES.index("use_residual"))
     i = rng.choice(active)
     choices = [v for v in range(len(GENE_VALUES[i])) if v != chromosome[i]]
-    if GENE_NAMES[i] == "pooling":
-        choices = [0] if arch["pooling"] in ("avg", "mixed") else [1]
     child = list(chromosome)
     child[i] = rng.choice(choices)
     return child

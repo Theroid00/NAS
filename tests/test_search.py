@@ -1,3 +1,4 @@
+from ga.chromosome import NUM_GENES, SCHEMA_VERSION
 import json
 from pathlib import Path
 import tempfile
@@ -10,7 +11,7 @@ from ga.engine import run_nas
 
 class SearchCorrectnessTests(unittest.TestCase):
     def test_winner_is_an_evaluated_chromosome_and_historical_best(self):
-        population = [[0] * 13, [1] * 13, [2 if len(v) > 2 else 0 for v in GENE_VALUES]]
+        population = [[0] * NUM_GENES, [1] * NUM_GENES, [2 if len(v) > 2 else 0 for v in GENE_VALUES]]
         with tempfile.TemporaryDirectory() as directory:
             scores = iter([0.1, 0.9, 0.2, 0.4, 0.3, 0.2])
             with patch("ga.engine.init_population", return_value=population), patch(
@@ -22,7 +23,7 @@ class SearchCorrectnessTests(unittest.TestCase):
             self.assertEqual(result["best_fitness"], 0.9)
             saved = json.loads(next(Path(directory).glob("best_*.json")).read_text())
             self.assertEqual(saved["best_arch"], decode(population[1]))
-            self.assertEqual(saved["schema_version"], 2)
+            self.assertEqual(saved["schema_version"], SCHEMA_VERSION)
             records = [json.loads(line) for line in Path(result["trial_path"]).read_text().splitlines()]
             self.assertEqual(len(records), 6)
             self.assertEqual(records[1]["chromosome"], result["best_chromosome"])
@@ -56,7 +57,7 @@ class SearchCorrectnessTests(unittest.TestCase):
                 run_nas(**kwargs)
 
     def test_chromosome_validation(self):
-        for chromosome in ([0] * 10, [-1] * 13, [True] * 13):
+        for chromosome in ([0] * 10, [-1] * NUM_GENES, [True] * NUM_GENES):
             with self.subTest(chromosome=chromosome), self.assertRaises(ValueError):
                 decode(chromosome)
 

@@ -1,10 +1,8 @@
-"""Shared budgets, isolated evaluation workers, and durable trial provenance."""
-from concurrent.futures import ProcessPoolExecutor
+"""Shared budgets, single-device evaluation, and durable trial provenance."""
 import hashlib
 import importlib.metadata
 import json
 import math
-import multiprocessing
 from pathlib import Path
 import platform
 import random
@@ -22,26 +20,18 @@ def validate_budget(budget, proxy_epochs, population_size=1, tournament_k=1):
         raise ValueError("Evaluation budget must cover the initial population")
 
 
-def resolve_devices(device, parallel=False):
+def resolve_device(device):
     import torch
     parsed = torch.device(device)
     if parsed.type == "cpu":
-        if parallel:
-            raise ValueError("Parallel evaluation requires explicit available CUDA devices")
-        return ["cpu"]
+        return "cpu"
     if parsed.type != "cuda" or not torch.cuda.is_available():
         raise ValueError(f"Requested device is unavailable: {device}")
     index = parsed.index if parsed.index is not None else 0
     count = torch.cuda.device_count()
     if index >= count:
         raise ValueError(f"CUDA index {index} exceeds available device count {count}")
-    if parallel:
-        if parsed.index is not None:
-            raise ValueError("Use --device cuda --parallel to select all GPUs, or an indexed device without --parallel")
-        if count < 2:
-            raise ValueError("Parallel search requires at least two GPUs")
-        return [f"cuda:{i}" for i in range(count)]
-    return [f"cuda:{index}"]
+    return f"cuda:{index}"
 
 
 def evaluate_task(chromosome, device, proxy_epochs, seed, split_seed, proxy_size, max_params):
@@ -63,17 +53,17 @@ class SearchSession:
         self.save_dir.mkdir(parents=True, exist_ok=True)
         self.trial_path = self.log_dir / f"trials_{self.run_id}.jsonl"
         self.metadata_path = self.log_dir / f"metadata_{self.run_id}.json"
-        self.count, self.best, self.executors = 0, None, []
+        self.count, self.best = 0, None
         self.evaluation_seconds = 0.0
         self.started = time.perf_counter()
         versions = {}
-        for name in ("torch", "torchvision", "numpy"):
+        for name in ("torch", "scikit-learn", "numpy"):
             try:
                 versions[name] = importlib.metadata.version(name)
             except importlib.metadata.PackageNotFoundError:
                 versions[name] = None
         self.metadata = {"run_id": self.run_id, "method": method, "schema_version": SCHEMA_VERSION,
-                         "search_space": SEARCH_SPACE, "smoke": smoke, "config": config,
+                         "dataset_name": "breast_cancer_wisconsin", "search_space": SEARCH_SPACE, "smoke": smoke, "config": config,
                          "python": platform.python_version(), "platform": platform.platform(),
                          "versions": versions, "status": "running"}
         try:
@@ -88,19 +78,17 @@ class SearchSession:
         self.metadata_path.write_text(json.dumps(self.metadata, indent=2), encoding="utf-8")
 
     def __enter__(self):
-        self.devices = [self.config["device"]] if self.smoke or self.config.get("injected_evaluator") else resolve_devices(
-            self.config["device"], self.config.get("parallel", False))
-        self.metadata["devices"] = self.devices
+        self.device = self.config["device"] if self.smoke or self.config.get("injected_evaluator") else resolve_device(self.config["device"])
+        self.metadata["device"] = self.device
         self._write_metadata()
         self.file = self.trial_path.open("x", encoding="utf-8")
         try:
             if not self.smoke and not self.config.get("injected_evaluator"):
                 # Fail on dataset/infrastructure errors before spending the search budget.
-                from data.cifar import get_proxy_loaders
+                from data.tabular import get_proxy_loaders, dataset_metadata
+                self.metadata["dataset"] = dataset_metadata(self.config["split_seed"])
+                self._write_metadata()
                 get_proxy_loaders(proxy_size=self.config["proxy_size"], seed=self.config["split_seed"])
-            if len(self.devices) > 1:
-                self.executors = [ProcessPoolExecutor(max_workers=1, mp_context=multiprocessing.get_context("spawn"))
-                                  for _ in self.devices]
         except BaseException as error:
             self.__exit__(type(error), error, error.__traceback__)
             raise
@@ -117,23 +105,19 @@ class SearchSession:
         for offset, chromosome in enumerate(population):
             decode(chromosome)
             trial_id = self.count + offset + 1
-            device = self.devices[(trial_id - 1) % len(self.devices)]
+            device = self.device
             args = (list(chromosome), device, self.config["proxy_epochs"], self._seed(trial_id),
                     self.config["split_seed"], self.config["proxy_size"], self.config.get("max_params"))
-            if self.executors:
-                pending = self.executors[(trial_id - 1) % len(self.executors)].submit(self.evaluator, *args)
-            else:
-                pending = None
-            tasks.append((trial_id, args, pending))
+            tasks.append((trial_id, args))
         fitnesses = []
-        for trial_id, args, pending in tasks:
+        for trial_id, args in tasks:
             chromosome, device, epochs, seed, split_seed, proxy_size, max_params = args
             t0 = time.perf_counter()
             try:
                 if self.smoke:
                     outcome = {"fitness": random.Random(seed).uniform(0.1, 0.9), "status": "smoke", "elapsed_s": 0.0}
                 else:
-                    outcome = pending.result() if pending else self.evaluator(*args)
+                    outcome = self.evaluator(*args)
                 if isinstance(outcome, (int, float)):
                     outcome = {"fitness": outcome, "status": "ok"}
                 fit = outcome["fitness"]
@@ -165,7 +149,7 @@ class SearchSession:
         if self.best is None:
             raise RuntimeError("No valid candidate was evaluated; inspect trial failures")
         result = {"run_id": self.run_id, "method": self.method, "schema_version": SCHEMA_VERSION,
-                  "search_space": SEARCH_SPACE, "smoke": self.smoke,
+                  "dataset_name": "breast_cancer_wisconsin", "search_space": SEARCH_SPACE, "smoke": self.smoke,
                   "winner_policy": "best_observed_validation_accuracy",
                   "best_chromosome": self.best["chromosome"], "best_arch": self.best["arch"],
                   "best_fitness": self.best["fitness"], "best_trial_id": self.best["trial_id"],
@@ -180,8 +164,6 @@ class SearchSession:
         return result
 
     def __exit__(self, kind, error, traceback):
-        for executor in self.executors:
-            executor.shutdown(wait=True, cancel_futures=True)
         self.file.close()
         self.metadata.update(status="failed" if error else "completed", evaluation_count=self.count,
                              elapsed_s=time.perf_counter() - self.started,

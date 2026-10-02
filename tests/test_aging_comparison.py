@@ -1,3 +1,4 @@
+from ga.chromosome import NUM_GENES, SCHEMA_VERSION
 import json
 from pathlib import Path
 import random
@@ -16,7 +17,7 @@ class AgingTests(unittest.TestCase):
         parents = []
         def mutation(parent, rng):
             parents.append(parent[:])
-            return [1] * 13
+            return [1] * NUM_GENES
         with tempfile.TemporaryDirectory() as directory, patch("ga.aging.mutate_active", side_effect=mutation):
             result = run_aging_evolution(n_evaluations=4, population_size=2, tournament_k=100,
                                         log_dir=directory, save_dir=directory, evaluator=lambda *args: next(scores))
@@ -27,12 +28,12 @@ class AgingTests(unittest.TestCase):
             self.assertEqual(result["evaluation_count"], 4)
 
     def test_mutation_changes_one_expressed_choice(self):
-        parent = [0] * 13
+        parent = [0] * NUM_GENES
         for seed in range(100):
             child = mutate_active(parent, random.Random(seed))
             changes = [i for i, (a, b) in enumerate(zip(parent, child)) if a != b]
             self.assertEqual(len(changes), 1)
-            self.assertNotIn(changes[0], [3, 4, 5])
+            self.assertNotIn(changes[0], [2, 3, 4, 8])
             self.assertNotEqual(decode(parent), decode(child))
 
     def test_comparison_obeys_same_budget_and_is_repeatable(self):

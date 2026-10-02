@@ -8,10 +8,12 @@ def load_winner(path):
     record = json.loads(Path(path).read_text(encoding="utf-8"))
     if record.get("smoke") or record.get("status") == "failed" or record.get("hyperparams", {}).get("injected_evaluator"):
         raise ValueError("Smoke/failed results cannot be used for full training")
-    if record.get("schema_version", SCHEMA_VERSION) != SCHEMA_VERSION:
+    if record.get("schema_version") != SCHEMA_VERSION:
         raise ValueError("Unsupported architecture schema; migrate explicitly before training")
     if "search_space" in record and record["search_space"] != SEARCH_SPACE:
         raise ValueError("Saved search space differs from this implementation")
+    if record.get("dataset_name") != "breast_cancer_wisconsin":
+        raise ValueError("Saved winner belongs to a different dataset")
     arch = decode(record["best_chromosome"])
     if "best_arch" in record and record["best_arch"] != arch:
         raise ValueError("Saved chromosome and architecture do not agree")

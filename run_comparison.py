@@ -12,9 +12,9 @@ from models.baselines.random_nas import run_random_search
 from utils.search_runtime import validate_budget
 
 
-def compare(methods, seeds, budget=300, population=20, proxy_epochs=5, device="cpu",
-            split_seed=42, proxy_size=10000, smoke=False, max_params=None,
-            out_dir="experiments/comparisons", full_epochs=None, full_seeds=(101,), parallel=False):
+def compare(methods, seeds, budget=300, population=20, proxy_epochs=20, device="cpu",
+            split_seed=42, proxy_size=0, smoke=False, max_params=None,
+            out_dir="experiments/tabular/comparisons", full_epochs=None, full_seeds=(101,)):
     validate_budget(budget, proxy_epochs, population)
     if not methods or len(set(methods)) != len(methods) or not set(methods) <= {"ga", "aging", "random"}:
         raise ValueError("Choose distinct methods from ga, aging, random")
@@ -39,7 +39,7 @@ def compare(methods, seeds, budget=300, population=20, proxy_epochs=5, device="c
                 directory = root / method / str(seed)
                 common = dict(device=device, proxy_epochs=proxy_epochs, seed=seed, split_seed=split_seed,
                               proxy_size=proxy_size, smoke=smoke, max_params=max_params,
-                              use_parallel_gpus=parallel, log_dir=str(directory), save_dir=str(directory))
+                               log_dir=str(directory), save_dir=str(directory))
                 if method == "ga":
                     result = run_nas(population_size=population, evaluation_budget=budget, **common)
                 elif method == "aging":
@@ -89,16 +89,15 @@ def main():
     p.add_argument("--seeds", nargs="+", type=int, default=[42, 43, 44])
     p.add_argument("--budget", type=int, default=300)
     p.add_argument("--population", type=int, default=20)
-    p.add_argument("--proxy-epochs", type=int, default=5)
-    p.add_argument("--proxy-size", type=int, default=10000)
+    p.add_argument("--proxy-epochs", type=int, default=20)
+    p.add_argument("--proxy-size", type=int, default=0, help="0 uses all training rows")
     p.add_argument("--split-seed", type=int, default=42)
     p.add_argument("--device", default="cpu")
-    p.add_argument("--parallel", action="store_true")
     p.add_argument("--smoke", action="store_true")
     p.add_argument("--max-params", type=int)
     p.add_argument("--full-epochs", type=int)
     p.add_argument("--full-seeds", nargs="+", type=int, default=[101])
-    p.add_argument("--out-dir", default="experiments/comparisons")
+    p.add_argument("--out-dir", default="experiments/tabular/comparisons")
     args = vars(p.parse_args())
     compare(**args)
 

@@ -12,11 +12,11 @@ def main():
     p.add_argument("--seeds", nargs="+", type=int, default=[42, 43, 44])
     p.add_argument("--budget", type=int, default=150)
     p.add_argument("--populations", nargs="+", type=int, default=[10, 20, 30])
-    p.add_argument("--proxy-epochs", nargs="+", type=int, default=[3, 5, 8])
+    p.add_argument("--proxy-epochs", nargs="+", type=int, default=[5, 10, 20])
     p.add_argument("--device", default="cpu")
     p.add_argument("--split-seed", type=int, default=42)
     p.add_argument("--smoke", action="store_true")
-    p.add_argument("--out-dir", default="experiments/comparisons")
+    p.add_argument("--out-dir", default="experiments/tabular/comparisons")
     args = p.parse_args()
     if len(set(args.seeds)) != len(args.seeds) or min(args.populations) < 2 or args.budget < max(args.populations) or min(args.proxy_epochs) < 1:
         p.error("Use distinct seeds, positive epochs, populations >=2, and sufficient budget")

@@ -1,34 +1,12 @@
-# Neural Architecture Search with Genetic Algorithms
+# Tabular Neural Architecture Search
 
-A CIFAR-10 research project comparing generational GA, aging evolution, and random search. Candidates are trained from scratch with a common proxy protocol. The aim is to measure whether search history improves architecture selection under a fixed budget.
+Compare generational genetic search (GA), aging evolution, and random search using small MLPs on Breast Cancer Wisconsin classification. This branch targets one laptop with one CPU or one GPU. Candidates run sequentially; there is no multi-GPU worker pool or DataParallel path.
 
-## Historical results and their limits
+The dataset ships with scikit-learn: 569 rows, 30 numerical features, two classes, no runtime download. A fixed stratified 60/20/20 split gives 341 training, 114 validation, and 114 test rows. StandardScaler is fitted on training rows only. All methods share those splits and the same training protocol. Dataset fingerprint, split indices, scaler statistics, dependency versions, trial seeds, architecture schema, and Git revision are saved for provenance.
 
-The repository retains these original measurements:
+## Install and verify
 
-| Method | Reported proxy accuracy | Full test accuracy | Parameters |
-| --- | ---: | ---: | ---: |
-| GA-NAS | 72.15% at final generation | 92.07% | 19,061,642 |
-| Random search | 69.90% | 92.15% | 5,605,130 |
-| Fixed ResNet | — | 90.52% | 1,227,594 in the current implementation |
-
-These are historical results, not measurements from the revised pipeline. The original GA saved winners using incorrectly aligned population/fitness arrays; the ResNet used a different optimizer and final-epoch checkpoint policy. The main GA log peaked at 73.20%, above its reported final score. A single pair of full-training results does not demonstrate an advantage for either search method. Existing experiment files are preserved for provenance; re-run comparisons before making performance claims about this branch.
-
-## What changed
-
-- Winner selection uses a durable archive of evaluated chromosome/fitness pairs.
-- Every trial records architecture, fitness, status, training seed, split seed, device, parameter count when available, and elapsed time in JSONL.
-- Metadata records configuration, search-space schema, dependency versions, Git revision, actual devices, and completion/failure status.
-- Search randomness uses a private RNG; model training and DataLoader randomness use separate seeds.
-- Parallel search uses one spawned process per GPU, preventing shared global RNG races. Unsupported devices fail before search; one-GPU parallel mode is rejected.
-- Infrastructure/programming failures stop the run. Divergence, CUDA memory exhaustion, and parameter-limit violations are explicit candidate outcomes rather than unexplained zero scores.
-- GA, random winners, and fixed ResNet share Adam, cosine decay, augmentation, dataset splits, and best-validation checkpoint selection for new full-training runs.
-- Smoke results and incompatible saved chromosomes are rejected by full-training commands.
-- Aging evolution, repeated comparisons, proxy-rank calibration, and an optional offline topology benchmark are available.
-
-## Installation and tests
-
-Use Python 3.10 or newer. Python 3.12 with CPU PyTorch was used for local verification. Install a CUDA-enabled PyTorch build appropriate to your hardware before running GPU experiments; the test environment below is CPU-only.
+Use Python 3.12 in a virtual environment:
 
 ```powershell
 python -m venv .venv
@@ -37,114 +15,72 @@ python -m pip install -r requirements.txt
 python -m unittest discover -s tests -v
 ```
 
-`requirements-tested-cpu.txt` records the exact locally tested environment. Install it in a separate virtual environment when reproducing CPU checks. DEAP is not required: evolutionary operators are implemented directly.
+`requirements-tested-cpu.txt` pins the locally tested CPU environment used by CI. For the remote RTX 4060, install a CUDA-capable PyTorch build using the [official installer](https://pytorch.org/get-started/locally/) and use `--device cuda`. The CPU lock file installs CPU-only PyTorch. CPU is the default; these tiny models may run faster on CPU because GPU launch and transfer overhead can dominate. Measure both on your laptop before choosing.
 
-Dataset downloads go to `data/cifar10_data/`, which is ignored by Git. The `data` Python package is tracked. CIFAR loading is cached within each evaluation process. Downloads or filesystem failures stop a real search rather than silently assigning every candidate zero fitness.
+## Run comparisons
 
-## Search methods
-
-```powershell
-# GA plumbing check: random scores, no model training or dataset download
-python main.py --smoke --pop 5 --gen 2 --log-dir experiments/comparisons/smoke --save-dir experiments/comparisons/smoke
-
-# Generational GA: 20 x 15 = 300 candidate evaluations
-python main.py --pop 20 --gen 15 --device cuda --seed 42 --split-seed 42
-
-# Aging evolution: mutate one active choice, evaluate child, remove oldest member
-python main.py --mode aging --pop 20 --n-eval 300 --device cuda --seed 42
-
-# Persisted random-search winner using the same proxy evaluator
-python main.py --mode random-search --n-eval 300 --device cuda --seed 42
-
-# Concurrent evaluation on all available GPUs
-python main.py --pop 20 --gen 15 --device cuda --parallel
-```
-
-GA defaults: tournament size 5, two elites, crossover probability 0.8, per-gene mutation 0.1. After three generations without a new observed maximum, mutation doubles to 0.2 at these defaults (cap 0.3), then resets when improvement resumes. Elites are retrained, and those evaluations consume budget; old weights are not inherited. Best-observation selection can favor lucky training outcomes, so repeat finalist training before drawing conclusions.
-
-Aging evolution uses tournament size 5 and FIFO replacement. Its mutation changes one expressed gene to a different value, avoids unused filter genes, and treats average/mixed pooling as equivalent when choosing a pooling mutation. It retains an independent history even after population members age out. Its initial population can be evaluated in parallel; subsequent children are evaluated one at a time to preserve the sequential algorithm.
-
-`--max-params 6000000` applies a common optional parameter ceiling to each search method. Rejected candidates count as attempted evaluations and are explicitly logged. If no valid candidate is found, the run fails without exporting a winner.
-
-Smoke fitness depends on trial seeds rather than architecture quality. Equal smoke budgets/seeds can therefore produce equal best scores across methods; smoke comparisons test plumbing only.
-
-## Repeated comparisons
+Start with a quick pilot (three methods, one seed, 60 total candidate evaluations):
 
 ```powershell
-# Quick check: all three methods, seven evaluations each, two search seeds
-python run_comparison.py --smoke --budget 7 --population 3 --seeds 42 43
-
-# Real search pilot with identical candidate-evaluation budgets
-python run_comparison.py --device cuda --budget 300 --population 20 --seeds 42 43 44
-
-# Repeat each winner's full training; validation only, without test evaluation
-python run_comparison.py --device cuda --budget 300 --population 20 --seeds 42 43 44 --full-epochs 50 --full-seeds 101 102
+python run_comparison.py --device cpu --budget 20 --population 10 --seeds 42 --proxy-epochs 10
 ```
 
-Each invocation creates a unique directory under `experiments/comparisons/`, with a comparison manifest and per-method/per-seed trials and winners. The manifest reports proxy mean/sample standard deviation, full-validation statistics when requested, search wall time, and summed candidate evaluation time. A single-search standard deviation is `null` rather than misleadingly zero.
-
-The primary budget is candidate evaluations, not equal GPU compute. Model sizes differ; parameter rejection has a different cost from training. Use recorded evaluation times and hardware allocation to assess compute efficiency. `total_evaluation_seconds` is summed evaluator wall time, not a measurement of GPU utilization. Do not select a method by repeatedly inspecting test scores. Choose and freeze the comparison using validation, then perform explicit final test evaluations.
-
-## Full training and final test evaluation
+A larger repeated comparison evaluates 100 candidates per method for three search seeds, then retrains each winner with two fresh seeds. Test data is never scored by this command:
 
 ```powershell
-# Any saved GA/aging/random winner; 45k train, 5k validation
-python evaluate_best.py --json path/to/best_run.json --device cuda --epochs 50 --seed 101 --validation-only
-
-# Fixed ResNet with the same new training/checkpoint policy
-python main.py --mode train-resnet --device cuda --full-epochs 50 --seed 101 --validation-only
-
-# Evaluate a frozen checkpoint on the official test set once
-python evaluate_best.py --test-checkpoint path/to/full_train_run.json --device cuda
+python run_comparison.py --device cuda --budget 100 --population 20 --seeds 42 43 44 --proxy-epochs 20 --full-epochs 100 --full-seeds 101 102
 ```
 
-Omitting `--validation-only` in standalone full-training commands evaluates test accuracy after loading the best validation checkpoint. Comparison and calibration runners always request validation-only training. Checkpoints save unwrapped model weights, allowing a different device count when loading. `--parallel` opts into full-training DataParallel; use the same choice across baseline methods.
+This costs 900 proxy evaluations and 18 final training runs. Reduce `--budget`, number of `--seeds`, or `--proxy-epochs` for faster iteration. Reduce all methods equally. The program records measured search durations; estimate a larger run by scaling the pilot's total evaluation time by evaluation count and epoch count, then allow for final retraining. This is an estimate, not a measured RTX 4060 runtime.
 
-The standalone random-winner trainer now accepts the same arguments as `evaluate_best.py`, including `--json`; it no longer embeds a historical chromosome. Newest-file discovery skips marked smoke and incompatible records. Ten-gene legacy results require an explicit migration by architectural field name; they are not padded or silently reinterpreted. Thirteen-gene legacy files can load if chromosome and architecture agree, but their missing experiment provenance still limits reproducibility.
+The default comparison uses 300 evaluations per method, three seeds, and 20 proxy epochs; final retraining is enabled only with `--full-epochs`. `--proxy-size 0` uses all 341 training rows. Positive sizes select a fixed stratified training subset; validation always uses the same 114 rows. Reducing epochs or budget is preferable to discarding rows in this already small dataset.
 
-## Validate the proxy before tuning search
+Use `--smoke` for orchestration checks with generated scores. Smoke records are rejected by training and provide no accuracy evidence.
+
+## Search space and fairness
+
+Schema 3 encodes nine choices: depth (1–4 hidden layers), four widths (16/32/64/128), activation (ReLU/leaky ReLU/ELU), dropout (0/0.1/0.3), LayerNorm, and residual connections. Unused widths are inactive. Residual connections apply only when adjacent widths match. Aging mutation changes one expressed choice. LayerNorm supports even singleton training batches.
+
+Every candidate starts from scratch using Adam (learning rate 0.001, weight decay 0.0001), cosine decay, batch size 32, and deterministic seeds. CPU training uses one thread to avoid overhead for tiny matrices. Search RNG is independent of training RNG. All three methods receive identical candidate evaluation budgets and the same per-trial seed schedule. GA re-evaluates survivors; those retrainings consume budget. Candidate evaluation matching is not identical wall-clock or parameter matching; durations and parameter counts are also logged.
+
+Search fitness is end-of-proxy validation accuracy. Full training selects its checkpoint by best validation accuracy. Historical best search candidates remain archived even after population replacement. Infrastructure failures stop a run and are recorded; memory exhaustion, divergence, and parameter limit failures have explicit statuses.
+
+## Calibrate before making claims
 
 ```powershell
-python calibrate_proxy.py --device cuda --samples 12 --seeds 101 102 --proxy-epochs 5 --long-epochs 20
+python calibrate_proxy.py --device cpu --samples 12 --seeds 101 102 --proxy-epochs 20 --long-epochs 100 --top-k 3
 ```
 
-This samples distinct effective architectures, evaluates each with the proxy and longer training under repeated seeds, and reports Spearman rank correlation and top-k shortlist overlap. Average ranks handle ties. Constant scores produce an undefined (`null`) correlation. Candidate failures are retained; only architectures with complete paired repeats contribute to the aggregate ranking. Longer-training accuracy is a reference protocol, not proof of asymptotic convergence. No test evaluation is performed. The command can be expensive; choose samples/epochs according to available compute.
+Calibration measures Spearman rank agreement and top-k overlap between proxy and longer training, using validation only. If agreement is weak, increase proxy epochs before the main comparison. Scores can tie because validation has only 114 rows; undefined correlation is reported rather than invented.
 
-## Cheap offline topology experiments
+This small dataset is an inexpensive engineering benchmark, not enough evidence for a general NAS research claim. It may saturate quickly, so random search can tie or win. Run repeated seeds, compare variation and cost, include a fixed MLP, and expand to larger tabular datasets if the methods are indistinguishable. Tabular results must never be compared numerically with historical CIFAR results.
 
-NAS-Bench-201 is now maintained through [NATS-Bench](https://github.com/D-X-Y/NATS-Bench). The optional adapter uses its topology search space (`tss`) and a local benchmark file or unpacked simple archive:
+## Individual searches and fixed MLP
 
 ```powershell
-python -m pip install -r requirements-benchmark.txt
-python benchmark_search.py --benchmark path/to/NATS-tss-v1_0-3ffb9-simple --budget 300 --population 20 --seeds 0 1 2 3 4
+python main.py --mode nas --pop 10 --gen 5 --proxy-epochs 20 --device cpu
+python main.py --mode aging --pop 10 --n-eval 50 --proxy-epochs 20 --device cpu
+python main.py --mode random-search --n-eval 50 --proxy-epochs 20 --device cpu
+python main.py --mode train-mlp --full-epochs 100 --seed 101 --validation-only
 ```
 
-Download the benchmark data using the official repository instructions; the adapter does not download multi-gigabyte archives automatically. It applies the search policies to six cell-edge choices rather than the project's 13-gene CNN space. It uses mean stored CIFAR-10 validation accuracy (`cifar10-valid`) and records simulated training time. It does not use stored test scores for selection. Mean stored scores remove much of the evaluator noise, so these experiments do not reproduce noisy live training. Benchmark results must be validated in the real project before claiming transfer. The local adapter tests use a synthetic table; the full benchmark archive was not available during verification.
-
-## Ablations, sweeps, and figures
+The fixed baseline is 30→64→32→2 with ReLU, dropout 0.1, no normalization or skips (4,130 parameters). It uses the same final training and checkpoint protocol.
 
 ```powershell
-python run_ablations.py --device cuda --budget 200 --seeds 42 43 44
-python run_hyper_sweep.py --device cuda --budget 150 --seeds 42 43 44
-python demo_replay.py --csv experiments/generation_logs/run_example.csv
-python generate_comparison.py --results path/to/ga_full.json path/to/random_full.json --labels GA Random --metric best_val_accuracy --out experiments/comparisons/validation.png
+python evaluate_best.py --json PATH_TO_WINNER_JSON --epochs 100 --seed 101 --validation-only
+python evaluate_best.py --test-checkpoint PATH_TO_FULL_TRAIN_JSON --device cpu
 ```
 
-Ablations use equal candidate-evaluation budgets even for the smaller population. Sweeps preserve evaluation counts while varying proxy training epochs, so they do not have equal training compute or identical measurement protocols. Both preserve repeated seeds and results in unique directories. Comparison figures read supplied measured JSON files; values are not hardcoded. Newly generated architecture diagrams show all five actual widths, residual block summaries, and an unclipped classifier output. Older figures remain historical artifacts.
+Evaluate test only after freezing the protocol and candidate choices. A checkpoint with a recorded test score cannot be tested again through this command. Use the winner's original `--split-seed` when retraining; training seeds can vary independently.
 
-## Search space and limitations
+## Outputs and historical files
 
-The thirteen genes cover depth (2–5 blocks), five filter widths, kernel size, block activation, dropout, normalization, classifier width, pooling, and a global residual toggle. The current space has **839,808 genotypes** and **207,360 effective model configurations** after accounting for unused filter genes and duplicate average/mixed pooling. Genotype sampling remains compatible with the original space: it samples depth uniformly and gives average-style pooling two encoded choices. All search methods share that distribution.
+New outputs live under `experiments/tabular/`, in unique run directories/files. Search writes generation CSV, trial JSONL, metadata JSON, and a winner JSON. Comparison writes its manifest incrementally. Full training saves model weights, history, training configuration, and paths. Existing files are never silently overwritten.
 
-The classifier uses ReLU and produces logits. Networks downsample after every block. Residual locations, arbitrary graph topology, depthwise convolutions, and attention are not searched in the live CNN space. Wider networks can be expensive; there is no default latency objective. Fixed deterministic settings improve repeatability within an environment, but do not guarantee identical results across PyTorch versions, devices, or hardware. CUDA/multi-GPU execution still requires hardware-specific validation.
+Historical CIFAR loaders, CNN builder, ResNet code, reports, and experiment artifacts remain for reference. Their schema 2 winners are rejected by the schema 3 trainer; the current CLI trains MLPs. Optional `requirements-cifar.txt` installs torchvision for historical code. Restore an earlier Git revision to reproduce the earlier CIFAR pipeline.
 
-Trial records survive failures, but interrupted search and training are not resumable in this version. Candidate re-evaluations are charged and retained rather than cached. The historical result archive contains multiple schemas and does not gain correctness merely because the current code is fixed.
+`benchmark_search.py` remains an optional separate NATS-Bench topology lookup experiment (`requirements-benchmark.txt`). It requires the downloaded benchmark archive and evaluates a different image search space; its results do not establish an advantage for this tabular MLP task.
 
-## References
+## Additional experiments
 
-- [Random Search and Reproducibility for Neural Architecture Search](https://proceedings.mlr.press/v115/li20c.html)
-- [Regularized Evolution for Image Classifier Architecture Search](https://arxiv.org/abs/1802.01548)
-- [Best Practices for Scientific Research on Neural Architecture Search](https://arxiv.org/abs/1909.02453)
-- [NAS-Bench-201](https://arxiv.org/abs/2001.00326) and [NATS-Bench](https://github.com/D-X-Y/NATS-Bench)
-
-Apache License 2.0; see [LICENSE](LICENSE).
+`run_ablations.py` tests crossover, mutation, elitism, and population changes using repeated equal evaluation budgets. `run_hyper_sweep.py` explores population sizes and proxy epochs, recording that varying epoch counts changes training cost. Both now use the tabular pipeline. Neither accesses test scores.

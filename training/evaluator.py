@@ -22,11 +22,11 @@ def validate(model, loader, device):
     return correct / total
 
 
-def evaluate_trial(chromosome, device="cpu", proxy_epochs=5, seed=42, split_seed=42,
-                   proxy_size=10000, max_params=None):
+def evaluate_trial(chromosome, device="cpu", proxy_epochs=20, seed=42, split_seed=42,
+                   proxy_size=0, max_params=None):
     from ga.chromosome import decode
-    from models.builder import build_model, count_parameters, estimate_parameters
-    from data.cifar import get_proxy_loaders
+    from models.mlp import build_model, count_parameters, estimate_parameters
+    from data.tabular import get_proxy_loaders
     from utils.reproducibility import set_training_seed
     if proxy_epochs < 1:
         raise ValueError("Proxy epochs must be positive")
@@ -42,7 +42,7 @@ def evaluate_trial(chromosome, device="cpu", proxy_epochs=5, seed=42, split_seed
         model = build_model(arch).to(device)
         model.eval()
         with torch.no_grad():
-            model(torch.zeros(2, 3, 32, 32, device=device))
+            model(torch.zeros(2, 30, device=device))
         params = count_parameters(model)
         train_loader, val_loader = get_proxy_loaders(proxy_size=proxy_size, seed=split_seed, training_seed=seed)
         optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
@@ -70,6 +70,6 @@ def evaluate_trial(chromosome, device="cpu", proxy_epochs=5, seed=42, split_seed
             torch.cuda.empty_cache()
 
 
-def evaluate_architecture(chromosome, device="cpu", proxy_epochs=5, **kwargs):
+def evaluate_architecture(chromosome, device="cpu", proxy_epochs=20, **kwargs):
     """Compatibility wrapper; infrastructure/programming errors propagate."""
     return evaluate_trial(chromosome, device, proxy_epochs, **kwargs)["fitness"]

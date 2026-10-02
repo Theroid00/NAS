@@ -113,6 +113,24 @@ def plot_architecture(
     """
     os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
 
+    if "num_layers" in arch:
+        labels = ["Input\n30 scaled features"] + [f"Hidden {i}\n{arch[f'width_{i}']} units" for i in range(1, arch["num_layers"] + 1)] + ["Output\n2 logits"]
+        fig, ax = plt.subplots(figsize=(max(8, len(labels) * 2), 3))
+        ax.axis("off")
+        ax.set_xlim(-0.7, len(labels) - 0.3)
+        ax.set_ylim(0, 1)
+        for i, label in enumerate(labels):
+            ax.text(i, 0.5, label, ha="center", va="center", bbox=dict(boxstyle="round,pad=0.5", facecolor=PALETTE[0], alpha=0.3))
+            if i:
+                ax.annotate("", xy=(i - 0.35, 0.5), xytext=(i - 0.65, 0.5), arrowprops=dict(arrowstyle="->"))
+        ax.set_title(f"MLP | {arch['activation']} | dropout={arch['dropout']} | layer norm={arch['layer_norm']} | residual when widths match={arch['use_residual']}")
+        fig.tight_layout()
+        fig.savefig(out_path, dpi=150, bbox_inches="tight")
+        if show:
+            plt.show()
+        plt.close(fig)
+        return out_path
+
     num_blocks = arch["num_blocks"]
     filter_keys = [f"filters_{i}" for i in range(1, 6)]
     colors = plt.cm.Blues(np.linspace(0.3, 0.8, num_blocks + 3))
@@ -268,7 +286,7 @@ def plot_comparison_bar(
     fig, ax = plt.subplots(figsize=(7, 4))
     bars = ax.bar(methods, accs, color=colors, edgecolor="white", linewidth=1.2)
     ax.set_ylabel("Validation Accuracy (%)" if metric_label == "best_val_accuracy" else "Test Accuracy (%)")
-    ax.set_title("Measured CIFAR-10 Results")
+    ax.set_title("Measured Results")
     ax.set_ylim(0, 100)
     for bar, acc in zip(bars, accs):
         ax.text(

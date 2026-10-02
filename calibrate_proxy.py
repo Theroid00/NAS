@@ -40,16 +40,16 @@ def main():
     p.add_argument("--seeds", nargs="+", type=int, default=[101, 102])
     p.add_argument("--sample-seed", type=int, default=42)
     p.add_argument("--split-seed", type=int, default=42)
-    p.add_argument("--proxy-epochs", type=int, default=5)
-    p.add_argument("--proxy-size", type=int, default=10000)
-    p.add_argument("--long-epochs", type=int, default=20)
+    p.add_argument("--proxy-epochs", type=int, default=20)
+    p.add_argument("--proxy-size", type=int, default=0, help="0 uses all training rows")
+    p.add_argument("--long-epochs", type=int, default=100)
     p.add_argument("--top-k", type=int, default=3)
     p.add_argument("--device", default="cpu")
-    p.add_argument("--out-dir", default="experiments/proxy_calibration")
+    p.add_argument("--out-dir", default="experiments/tabular/proxy_calibration")
     args = p.parse_args()
-    if not 3 <= args.samples <= 207360 or not 1 <= args.top_k <= args.samples or not args.seeds or len(set(args.seeds)) != len(args.seeds):
+    if not 3 <= args.samples <= 1000 or not 1 <= args.top_k <= args.samples or not args.seeds or len(set(args.seeds)) != len(args.seeds):
         p.error("Use at least three samples, distinct training seeds, and top-k within sample count")
-    if args.proxy_epochs < 1 or args.long_epochs <= args.proxy_epochs or not 1 <= args.proxy_size <= 48000:
+    if args.proxy_epochs < 1 or args.long_epochs <= args.proxy_epochs or not 0 <= args.proxy_size <= 341:
         p.error("Use positive proxy epochs, longer reference training, and a valid proxy size")
     from training.evaluator import evaluate_trial
     from training.trainer import full_train
@@ -58,9 +58,10 @@ def main():
     while len(chromosomes) < args.samples:
         chromosome = random_chromosome(rng)
         arch = decode(chromosome)
-        active = {k: v for k, v in arch.items() if not k.startswith("filters_") or int(k.split("_")[1]) <= arch["num_blocks"]}
-        if active["pooling"] == "mixed":
-            active["pooling"] = "avg"
+        active = {k: v for k, v in arch.items() if not k.startswith("width_") or int(k.split("_")[1]) <= arch["num_layers"]}
+        widths = [30] + [arch[f"width_{j}"] for j in range(1, arch["num_layers"] + 1)]
+        if not any(a == b for a, b in zip(widths, widths[1:])):
+            active["use_residual"] = False
         key = json.dumps(active, sort_keys=True)
         if key not in seen:
             chromosomes.append(chromosome)

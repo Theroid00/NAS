@@ -17,10 +17,10 @@ def main():
     p.add_argument("--seeds", nargs="+", type=int, default=[42, 43, 44])
     p.add_argument("--budget", type=int, default=200)
     p.add_argument("--device", default="cpu")
-    p.add_argument("--proxy-epochs", type=int, default=5)
+    p.add_argument("--proxy-epochs", type=int, default=20)
     p.add_argument("--split-seed", type=int, default=42)
     p.add_argument("--smoke", action="store_true")
-    p.add_argument("--out-dir", default="experiments/comparisons")
+    p.add_argument("--out-dir", default="experiments/tabular/comparisons")
     args = p.parse_args()
     if args.budget < 20 or len(set(args.seeds)) != len(args.seeds):
         p.error("Budget must cover population 20; seeds must be distinct")
