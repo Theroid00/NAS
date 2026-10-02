@@ -3,7 +3,13 @@
 *.doc
 
 # Datasets
-data/
+data/cifar10_data/
+data/benchmarks/
+
+# Local environments and new experimental outputs
+.venv/
+experiments/comparisons/
+experiments/proxy_calibration/
 
 # Model Checkpoints
 experiments/best_architectures/ckpt_*

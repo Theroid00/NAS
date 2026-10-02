@@ -12,7 +12,7 @@ import json
 import os
 from typing import List, Optional
 
-from ga.chromosome import random_chromosome, decode, chromosome_to_str
+from ga.chromosome import decode, SEARCH_SPACE, SCHEMA_VERSION
 from ga.operators import select_parents, single_point_crossover, mutate
 from ga.population import init_population, get_top_k, get_best
 
@@ -86,10 +86,17 @@ def run_nas(
     """
     from utils.logger import GenerationLogger
 
+    if population_size < 1 or n_generations < 1 or proxy_epochs < 1:
+        raise ValueError("Population, generations, and proxy epochs must be positive")
+    if not 0 <= n_elites <= population_size or tournament_k < 1:
+        raise ValueError("Elite count must be within population size; tournament size must be positive")
+    if not 0 <= crossover_prob <= 1 or not 0 <= mutation_prob <= 1:
+        raise ValueError("Operator probabilities must be between zero and one")
+
     os.makedirs(log_dir, exist_ok=True)
     os.makedirs(save_dir, exist_ok=True)
 
-    run_id = time.strftime("%Y%m%d_%H%M%S")
+    run_id = time.strftime("%Y%m%d_%H%M%S") + f"_{time.time_ns() % 1_000_000_000:09d}"
     logger = GenerationLogger(log_dir, run_id)
 
     print(f"\n{'='*60}")
@@ -102,7 +109,8 @@ def run_nas(
     population = init_population(population_size)
     fitnesses = [0.0] * population_size  # placeholder for first gen display
 
-    best_historical_fitness = 0.0
+    best_historical_fitness = -1.0
+    best_historical_chromosome = None
     stagnation_counter = 0
 
     for gen in range(n_generations):
@@ -120,6 +128,8 @@ def run_nas(
 
         # ---- Logging ----
         best_chrom, best_fit = get_best(population, fitnesses)
+        if best_fit > best_historical_fitness:
+            best_historical_chromosome = list(best_chrom)
         mean_fit = sum(fitnesses) / len(fitnesses)
         
         import math
@@ -131,7 +141,7 @@ def run_nas(
         
         # Adaptive Mutation Logic
         current_mutation_prob = mutation_prob
-        if best_fit > best_historical_fitness + 1e-4:
+        if best_fit > best_historical_fitness:
             best_historical_fitness = best_fit
             stagnation_counter = 0
         else:
@@ -157,6 +167,8 @@ def run_nas(
         )
 
         # ---- Build next generation ----
+        if gen == n_generations - 1:
+            break
         # 1. Elitism — carry top-n_elites forward unchanged
         elites = get_top_k(population, fitnesses, n_elites)
 
@@ -180,12 +192,17 @@ def run_nas(
         population = elites + offspring
 
     # ---- Final best ----
-    best_chrom, best_fit = get_best(population, fitnesses)
+    best_chrom = best_historical_chromosome
+    best_fit = best_historical_fitness
     best_arch = decode(best_chrom)
 
     # Save best architecture
     result = {
         "run_id": run_id,
+        "schema_version": SCHEMA_VERSION,
+        "search_space": SEARCH_SPACE,
+        "smoke": smoke,
+        "winner_policy": "best_observed_validation_accuracy",
         "best_chromosome": best_chrom,
         "best_fitness": best_fit,
         "best_arch": best_arch,
@@ -195,6 +212,11 @@ def run_nas(
             "proxy_epochs": proxy_epochs,
             "crossover_prob": crossover_prob,
             "mutation_prob": mutation_prob,
+            "tournament_k": tournament_k,
+            "n_elites": n_elites,
+            "use_parallel_gpus": use_parallel_gpus,
+            "device": device,
+            "adaptive_mutation": {"patience": 3, "multiplier": 2, "cap": 0.3},
         },
     }
     save_path = os.path.join(save_dir, f"best_{run_id}.json")

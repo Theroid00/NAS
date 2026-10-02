@@ -3,7 +3,7 @@ ga/chromosome.py
 ================
 Defines the search space, chromosome encoding/decoding, and random initialisation.
 
-Each architecture is encoded as a list of 10 integers, where each integer is an
+Each architecture is encoded as a list of 13 integers, where each integer is an
 index into the corresponding list of values in SEARCH_SPACE.
 """
 
@@ -32,6 +32,7 @@ SEARCH_SPACE: Dict[str, List[Any]] = {
 GENE_NAMES: List[str] = list(SEARCH_SPACE.keys())
 GENE_VALUES: List[List[Any]] = list(SEARCH_SPACE.values())
 NUM_GENES: int = len(GENE_NAMES)
+SCHEMA_VERSION = 2
 
 
 # ---------------------------------------------------------------------------
@@ -45,6 +46,11 @@ def random_chromosome() -> List[int]:
 
 def decode(chromosome: List[int]) -> Dict[str, Any]:
     """Convert integer-index chromosome to a human-readable architecture dict."""
+    if not isinstance(chromosome, (list, tuple)) or len(chromosome) != NUM_GENES:
+        raise ValueError(f"Expected {NUM_GENES} genes (schema {SCHEMA_VERSION}); migrate legacy records by architecture name")
+    for i, value in enumerate(chromosome):
+        if type(value) is not int or not 0 <= value < len(GENE_VALUES[i]):
+            raise ValueError(f"Invalid index {value!r} for {GENE_NAMES[i]}")
     return {GENE_NAMES[i]: GENE_VALUES[i][chromosome[i]] for i in range(NUM_GENES)}
 
 
