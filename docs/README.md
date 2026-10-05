@@ -1,6 +1,6 @@
 # Project documentation
 
-Updated: 2026-10-03. Start here when returning to the codebase.
+Updated: 2026-10-05. Start here when returning to the codebase.
 
 The project searches for the best observed MLP architecture for a tabular dataset
 within a declared candidate-evaluation budget. It compares generational genetic
@@ -27,6 +27,7 @@ search objective. The current goal is a readable AI/ML engineering portfolio.
 ## Existing records and optional components
 
 - [Project direction](project-direction.md): industry goal and user decisions.
+- [Improvement roadmap](improvement-roadmap.md): prioritized portability/examples, Docker verification, optional hosting, and later pipeline improvements.
 - [Research direction](research-direction.md): preserved ideas and literature from the earlier review; parked.
 - [Industry results](industry-results.json): machine-readable snapshot of the measured Covertype suite.
 - [Industry demo](industry-demo.md): previously implemented optional packaging/API/dashboard instructions.
