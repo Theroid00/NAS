@@ -1,0 +1,70 @@
+{
+  "date": "2026-10-05",
+  "source_fingerprint": {
+    "version": 1,
+    "sha256": "f47ea3c3bc835ed67da38656e22a4943c10c2a8c1f92da332d85e7f8effde5bf",
+    "files": {
+      "calibrate_proxy.py": "1d14164470e60182c9f1dfd1d6e364c24cbd537392cb3c5fe057b24448fe2434",
+      "data/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "data/specs.py": "fc7310c80c2af01822213c792256701144e662d8a7372449ba6b56efd883d63d",
+      "data/tabular.py": "fb4e18197454db145a59f1483426a7647054c871112c63e78145c35c45bf9cc9",
+      "evaluate_best.py": "fbe0710712739866d1eac4cb8fb26ba958c358a515e20c66f18d550de0594352",
+      "ga/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "ga/aging.py": "788b26ef974a82caed069b4487096027f325ff6ec25c7855ee2545bcd0502c34",
+      "ga/chromosome.py": "8e07892e522851c424af0c673391c95d4bf5d5f25b47d2f6697f19a451156f13",
+      "ga/engine.py": "d206ef257352cb150e64fd92aaa2c1c62358e5b59770a79c43338f60984a4f50",
+      "ga/operators.py": "d9c4a79cbecd34f91cd8e9e1b7519e981984d1a56e92c44d457bc3dd03cfc67e",
+      "ga/population.py": "d9cfe6666b885d537c81285ffa4b4c20cf1a7a91cd7482ad8bc4d8b69c479bfc",
+      "main.py": "1c9318a43888debd2b781382ba28833480cdf0eb06093f3f6609e3317dc6fd07",
+      "models/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "models/baselines/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "models/baselines/random_nas.py": "cdc9c93e5a49fff3d08355b2ce16657374e74443a2e770b55ceaafd467b2c4f5",
+      "models/mlp.py": "6440cc1905d51c6dcf0198bef5e4148efe952b4e1d5b05f47642128048ea2b8b",
+      "run_ablations.py": "ce59430675d91979f128954b6e826e3149d2af7c3449981a6b752bded19d0ed9",
+      "run_comparison.py": "6b25f8df836e588fae9c99fd09c98cb2c7bd88cdb6a9ee8535bce54b11bcddc9",
+      "run_hyper_sweep.py": "c1152bcffd5ad9e9c2e4da78ef97a175f08c9877233e4f9145242d3a9d7fabe5",
+      "training/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "training/config.py": "39f9b6b6d8ce846b87a570d16fbd66a02e5b4d921a88f0d6047255a9dc4df538",
+      "training/evaluator.py": "98a3ae8188b0d1ebf08a5a0667da646d1c7cb5d28f66b5c7ab15f2306a90ae4c",
+      "training/metrics.py": "7e6221b6fcebea1ee7c66efbe984e1fa13392fcf8cbf5ff52f77e36cfadafb2b",
+      "training/trainer.py": "885ebd6efb64f99216a41757c7412fac196c82c33f1ded98a27028576f7d2076",
+      "utils/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "utils/logger.py": "fcdabde3a9c09c20985a3e7b50471817a3a8b2db70e49ed7b13802a23024d4ce",
+      "utils/persistence.py": "a545db8cc534f84e71011890ae38d7ae33b1437772b431c6b08719a928cb70b7",
+      "utils/provenance.py": "7b7bd38a50d27051772507e7dc6293ebd5b2421628f5c9894fd1b2ea4c729851",
+      "utils/records.py": "2555c9056de4408830270f2f6bc4e1f196e17e3ab96d03ee8b7299673e40d183",
+      "utils/reproducibility.py": "f5b35fd89575ea54c61496f7f7490feb2c4ea224f5b71f13516ce5b010e05187",
+      "utils/results.py": "3debee603f2f57726cae00e26afd410d5b8b03cc620f73a65f60c18c4a12fefd",
+      "utils/search_runtime.py": "b4f114fc343fdf2146a2f003e7fce6f2b6d9b6f4520a22581b93a789cb5a3a0e",
+      "utils/visualiser.py": "ba906475036b43668d762d71c6a628bfbd58856cbe15edbe82c1bf9e0ea3b9cb"
+    }
+  },
+  "unit_tests_passed": 73,
+  "gpu_quickstart": {
+    "methods": [
+      "ga",
+      "aging",
+      "random"
+    ],
+    "candidate_evaluations": 12,
+    "proxy_epochs": 1,
+    "full_epochs": 2,
+    "test_evaluated": false,
+    "device": "cuda:0",
+    "relocated_resume_passed": true
+  },
+  "relocated_tree_without_original_cpu_test": true,
+  "bundle": {
+    "model_id": "20261002_190146_3f7e8a6deb_seed101",
+    "bytes": 222657,
+    "sha256": "ca5da1d3d572faa6f2ad5ac8e7c13909e7d83183370ed49be717b439ebd20c9a"
+  },
+  "bundle_gpu_prediction_parity": true,
+  "local_http_smoke_passed": true,
+  "docker_local_build": "not_run_engine_unavailable",
+  "linux_container_ci": "configured_not_yet_verified",
+  "legacy_report_rebuild_matches": true,
+  "historical_report_sha256": "8744f27d09cead324e6483755dd453c0ddaf2dc0d14175457fac5796650669ac",
+  "documentation_links_and_python_syntax": "passed",
+  "public_model_upload_or_deployment": false
+}

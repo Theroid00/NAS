@@ -12,6 +12,11 @@ validation, results, and current limitations.
 
 ## Core GPU workflow
 
+For a short offline integration example, run `python quickstart.py --device cuda`.
+For saved-model prediction, use `python predict_example.py --artifact PATH --device cuda`.
+See [portable examples and Docker delivery](docs/portable-delivery.md) for artifact
+bundles, moving experiments, and serving the inference API in a container.
+
 Use Python 3.12 and an isolated environment. The CUDA requirements target the
 RTX 4060 environment used for the measured suite; a compatible driver is required.
 

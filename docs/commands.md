@@ -60,6 +60,10 @@ standalone defaults when a short check is intended.
 
 ## `main.py` options
 
+Additional delivery entry points are `quickstart.py`, `predict_example.py`,
+`relocate_experiment.py`, and `model_bundle.py`; their usage and Docker commands
+are documented in [portable delivery](portable-delivery.md).
+
 | Option | Default / behavior |
 | --- | --- |
 | `--dataset` | `covertype`; alternative `breast_cancer_wisconsin` |

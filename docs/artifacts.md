@@ -192,9 +192,10 @@ the local winner/journal/full-result files referenced by the comparison.
 Portfolio finalization enriches it with environment versions, training-source
 hashes captured **at packaging time**, artifact path, example training-row index,
 and an in-process inference benchmark. A `delivery.json` beside the suite points
-to the report/artifact/selected model and records test completion. Raw experiment
-paths are absolute machine paths; this preserves local provenance but does not
-make a fresh clone immediately runnable with those paths.
+to the report/artifact/selected model and records test completion. Historical raw
+records and presentation/delivery summaries retain their original machine paths.
+New experiment records use `path_format: 1` with record-relative references;
+see [portable delivery](portable-delivery.md) for moving complete experiments.
 
 The plain report generator does not preserve enrichment. Existing historical
 source hashes describe packaging-time files; cleanup legitimately changes some

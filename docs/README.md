@@ -23,6 +23,7 @@ search objective. The current goal is a readable AI/ML engineering portfolio.
 | [Validation and results](validation-and-results.md) | Tests, measured suite, score interpretation, audit evidence, and verification limits |
 | [Current state and cleanup](maintenance.md) | Removed redundancy, retained optional tools, deferred issues, and future maintenance |
 | [Complete project review](project-audit.md) | Latest source review, independent results checks, GPU integration, recovery fix, and remaining limits |
+| [Portable delivery](portable-delivery.md) | Implemented relative records, short GPU example, model bundles, and Docker/CI usage and verification limits |
 
 ## Existing records and optional components
 

@@ -1,5 +1,10 @@
 # Resume interrupted searches
 
+New experiment references use record-relative paths (`path_format: 1`). Copy the
+complete tree and resume from its new metadata/comparison location; see
+[portable delivery](portable-delivery.md). Path relocation preserves the source,
+dependency, dataset, and replay checks and does not bypass recovery restrictions.
+
 Available on branch `resume/resume-trial`. New GA, aging evolution, and random
 search runs save resumable metadata automatically. The metadata path is printed
 at startup; each comparison also saves `comparison.json` in its output directory.

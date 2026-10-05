@@ -67,10 +67,10 @@ part of the shortest run command.
 | Report regeneration | Plain report output can replace portfolio enrichment at the same default path | Separate plain/enriched outputs or preserve explicitly compatible enrichment; deferred |
 | Dashboard | No selected-model test/inference summary or uncertainty display; only first full-training repeat is inspected | Presentation polish if the user chooses to resume dashboard work; deferred |
 | Fresh-machine delivery | Core GPU package versions pinned; reusable installation/CUDA check added; see the setup guide for fresh-environment evidence | Downloadable weights release and other OS/driver validation remain optional |
-| Docker | Existing optional image is CPU-only and unbuilt locally | Build/verify only if container delivery becomes a requirement |
+| Docker | CPU inference image has read-only model mount/readiness and Ubuntu CI smoke checks; no local engine | Record Linux CI build/runtime results; GPU image remains optional |
 | Source provenance | Implemented: startup relative-file hashes and aggregate digest in search/suite/full-training records; changed sources block recovery | Historical runs retain their original records and require their original recovery implementation |
 | Resume | Completed trials recover, partial epochs do not; individual format 3/suite format 2 enforce source consistency | Epoch recovery is a separate feature; older formats use the original checkout |
-| Paths | Comparison/result files contain original local paths | Add relocation support if distributing raw experiments becomes necessary |
+| Paths | New experiment JSON uses record-relative references; copy/migration utility provided; historical records/reports remain unchanged | Keep whole referenced trees together; explicit roots required for legacy relocation |
 | Objective | Only validation accuracy drives search | Declare and implement a new shared objective before rerunning all methods |
 | Dataset ingestion | Two named classification datasets; no generic upload/CSV schema | Add ingestion only when a specific dataset/user flow requires it |
 | Broader claims | Five seeds, one main dataset, one retraining seed per winner | More datasets/seeds/controls only if a broader claim is needed |

@@ -1,6 +1,7 @@
 # Industry improvement and containerization roadmap
 
-Updated: 2026-10-05. This is a plan, not a record of completed implementation.
+Updated: 2026-10-05. Implementation status is recorded below; detailed commands
+and verification limits are in [portable delivery](portable-delivery.md).
 The latest completed baseline is the [project audit](project-audit.md): 67 tests
 passed, GPU integration checks passed, and historical benchmark records agreed.
 The core project has no identified blocker requiring a broad refactor.
@@ -18,11 +19,11 @@ sampling, budgets, or historical benchmark results as part of packaging work.
 | Order | Work | Value | Status |
 | --- | --- | --- | --- |
 | 1 | Review the code and merge the reviewed branch when satisfied | Understand and explain the implementation; establish the release baseline | User review/merge pending |
-| 2 | Portable experiment paths | Copy saved runs between machines without broken references | Planned |
-| 3 | Runnable example and downloadable selected-model artifact | Demonstrate the project without running the full benchmark | Planned |
-| 4 | Verify and complete Docker inference packaging | Reproduce the local API on a clean machine with fewer setup steps | Planned; existing Dockerfile unverified |
+| 2 | Portable experiment paths | Copy saved runs between machines without broken references | Implemented; moved-tree recovery/retraining/export tested |
+| 3 | Runnable example and downloadable selected-model artifact | Demonstrate the project without running the full benchmark | Examples/bundle tooling implemented; local selected-model bundle verified; public upload pending |
+| 4 | Verify and complete Docker inference packaging | Reproduce the local API on a clean machine with fewer setup steps | Packaging and Ubuntu CI checks implemented; local Docker unavailable; Linux run pending |
 | 5 | Optional hosted prediction demo | Give reviewers a public link to try the trained model | Optional; hosting choice pending |
-| 6 | README/resume presentation | Explain the problem, design decisions, bounded results, and runnable workflow | Planned polish |
+| 6 | README/resume presentation | Explain the problem, design decisions, bounded results, and runnable workflow | README examples linked; resume wording remains optional |
 
 Review and merge are separate Git actions. This roadmap does not record a merge
 or authorize replacing `main`. Features should be committed in reviewable stages

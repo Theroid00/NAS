@@ -135,6 +135,12 @@ the tested CUDA torch build; `requirements-tested-cpu.txt` pins CPU CI dependenc
 `requirements-benchmark.txt` supports the optional NATS lookup.
 
 `.github/workflows/tests.yml` runs Windows CPU unit checks and smoke comparisons.
+It also defines an Ubuntu Docker build and HTTP prediction/restart/failure check.
+`utils/records.py` handles relative experiment references. `relocate_experiment.py`
+copies/migrates experiment paths; `quickstart.py` runs the short real workflow;
+`predict_example.py` predicts without training; `model_bundle.py` and
+`serving/bundle.py` package/install pinned-checksum model artifacts. Container
+verification helpers live in `scripts/`. See [portable delivery](portable-delivery.md).
 `Dockerfile` is an optional CPU serving image; `.dockerignore` excludes datasets,
 experiments, weights, and local environments. `.gitignore` keeps new tabular runs
 and inference exports local. `LICENSE` is the project license. Package
