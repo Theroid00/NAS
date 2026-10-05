@@ -27,16 +27,17 @@ jobs:
           docker run --rm --user "$(id -u):$(id -g)" -v "$RUNNER_TEMP/nas-fixture:/fixtures" nas-inference python scripts/container_fixture.py --out /fixtures
       - name: Serve read-only artifact and verify predictions
         run: |
-          docker run -d --name nas-smoke -p 8000:8000 -v "$RUNNER_TEMP/nas-fixture/artifact:/models/selected:ro" nas-inference
+          docker run -d --name nas-smoke --user "$(id -u):$(id -g)" -p 8000:8000 -v "$RUNNER_TEMP/nas-fixture/artifact:/models/selected:ro" nas-inference
           python scripts/container_smoke.py --fixture "$RUNNER_TEMP/nas-fixture"
           docker restart nas-smoke
           python scripts/container_smoke.py --fixture "$RUNNER_TEMP/nas-fixture"
       - name: Reject missing and corrupt artifacts
         run: |
-          if docker run --rm -e NAS_ARTIFACT=/models/missing nas-inference; then exit 1; fi
+          if docker run --rm --user "$(id -u):$(id -g)" -e NAS_ARTIFACT=/models/missing nas-inference; then exit 1; fi
           cp -r "$RUNNER_TEMP/nas-fixture/artifact" "$RUNNER_TEMP/nas-fixture/corrupt"
           truncate -s 1 "$RUNNER_TEMP/nas-fixture/corrupt/model.pt"
-          if docker run --rm -v "$RUNNER_TEMP/nas-fixture/corrupt:/models/selected:ro" nas-inference; then exit 1; fi
+          if docker run --rm --user "$(id -u):$(id -g)" -v "$RUNNER_TEMP/nas-fixture/corrupt:/models/selected:ro" nas-inference > "$RUNNER_TEMP/nas-corrupt.log" 2>&1; then exit 1; fi
+          python -c 'import os,pathlib; assert "Artifact weights checksum differs" in (pathlib.Path(os.environ["RUNNER_TEMP"]) / "nas-corrupt.log").read_text()'
       - name: Container logs and cleanup
         if: always()
         run: |

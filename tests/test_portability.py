@@ -11,7 +11,7 @@ from utils.records import read_record, write_record
 class PortabilityTests(unittest.TestCase):
     def test_record_relative_paths_and_explicit_legacy_relocation(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             path = root / "record.json"
             value = {"checkpoint_path": str(root / "weights.pt"), "runs": [{"winner_path": str(root / "best.json")}]}
             write_record(path, value)

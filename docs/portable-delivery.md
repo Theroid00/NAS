@@ -121,6 +121,17 @@ to select another mounted path. Port 8000 is used by both service and healthchec
 map a different host port with `-p HOST_PORT:8000`. The image's default device is
 CPU and it contains no GPU runtime or trained weights.
 
+On Linux, exported directories are private to their owner by default. Match that
+owner's non-root UID/GID when mounting them instead of broadening permissions:
+
+```bash
+docker run --rm --user "$(id -u):$(id -g)" -p 8000:8000 -v "$PWD/artifacts/model-v1:/models/selected:ro" nas-inference
+```
+
+The CI fixture and API run use the same host UID/GID. This preserves read access
+without making model directories world-readable. Windows bind-mount permissions
+are managed by Docker Desktop; a permission error must be resolved before startup.
+
 The Docker ignore rules exclude local environments, raw experiments, weights,
 datasets, docs/tests, and `analysis/`. The Ubuntu CI job builds the image, creates
 a tiny offline CPU fixture inside it, serves the read-only artifact, checks real
