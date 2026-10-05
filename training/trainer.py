@@ -1,5 +1,4 @@
 """Shared Adam training and validation-based checkpoint selection for every method."""
-import json
 from pathlib import Path
 import time
 import torch
@@ -9,8 +8,8 @@ from training.config import FULL_EPOCHS, LEARNING_RATE, WEIGHT_DECAY
 from training.evaluator import validate
 from utils.reproducibility import set_training_seed
 from utils.search_runtime import resolve_device
-from utils.persistence import atomic_json
 from utils.provenance import source_fingerprint
+from utils.records import read_record, write_record
 
 
 def train_winner(winner_path, device="cpu", epochs=FULL_EPOCHS, seed=42,
@@ -121,7 +120,7 @@ def train_model(model, device, epochs, save_dir, run_id, seed, split_seed,
                            "weight_decay": WEIGHT_DECAY, "epochs": epochs, "batch_size": train_loader.batch_size,
                            "train_samples": len(train_loader.dataset), "validation_samples": len(val_loader.dataset),
                            "checkpoint_policy": "best_validation", "device": primary}}
-    atomic_json(results_path, result)
+    write_record(results_path, result)
     return result
 
 
@@ -131,7 +130,7 @@ def evaluate_checkpoint(results_path, device="cpu"):
     from models.mlp import build_baseline_mlp
     from data.tabular import get_full_loaders, dataset_metadata
     path = Path(results_path)
-    result = json.loads(path.read_text(encoding="utf-8"))
+    result = read_record(path)
     from ga.chromosome import SCHEMA_VERSION
     from data.specs import DATASETS, dataset_spec
     dataset = result.get("dataset", {}).get("name")
@@ -152,5 +151,5 @@ def evaluate_checkpoint(results_path, device="cpu"):
     metrics = validate(model, test, primary, return_metrics=True)
     result["test_accuracy"] = metrics["accuracy"] if isinstance(metrics, dict) else metrics
     result["test_metrics"] = metrics
-    atomic_json(path, result)
+    write_record(path, result)
     return result

@@ -1,11 +1,11 @@
 """Validate saved architecture provenance before launching expensive training."""
-import json
 from pathlib import Path
 from ga.chromosome import decode, SCHEMA_VERSION, SEARCH_SPACE
+from utils.records import read_record
 
 
 def load_winner(path):
-    record = json.loads(Path(path).read_text(encoding="utf-8"))
+    record = read_record(path)
     if record.get("smoke") or record.get("status") == "failed" or record.get("hyperparams", {}).get("injected_evaluator"):
         raise ValueError("Smoke/failed results cannot be used for full training")
     if record.get("schema_version") != SCHEMA_VERSION:

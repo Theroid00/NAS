@@ -11,6 +11,7 @@ from ga.aging import run_aging_evolution
 from ga.engine import run_nas
 from models.baselines.random_nas import run_random_search
 from utils.persistence import RunLock
+from utils.records import read_record
 from utils.search_runtime import resume_search
 
 
@@ -48,7 +49,7 @@ class ResumeTests(unittest.TestCase):
                     with self.assertRaises(KeyboardInterrupt):
                         self.launch(method, str(directory), interrupt)
                     metadata_path = next(directory.glob("metadata_*.json"))
-                    metadata = json.loads(metadata_path.read_text())
+                    metadata = read_record(metadata_path)
                     self.assertEqual(metadata["status"], "interrupted")
                     self.assertEqual(metadata["evaluation_count"], stop)
                     completed_prefix = Path(metadata["trial_path"]).read_bytes()
@@ -81,7 +82,7 @@ class ResumeTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "disconnected"):
                 self.launch("random", directory, interrupt)
             metadata = next(Path(directory).glob("metadata_*.json"))
-            trial = Path(json.loads(metadata.read_text())["trial_path"])
+            trial = Path(read_record(metadata)["trial_path"])
             with trial.open("ab") as stream:
                 stream.write(b'{"trial_id": 3,')
             with self.assertRaisesRegex(RuntimeError, "again"):
@@ -150,7 +151,7 @@ class ResumeTests(unittest.TestCase):
                         smoke=True, out_dir=directory)
             path = next(p for p in Path(directory).glob("*/comparison.json")
                         if json.loads(p.read_text())["status"] == "interrupted")
-            prefix = json.loads(path.read_text())["runs"]
+            prefix = read_record(path)["runs"]
             recovered = resume_comparison(path)
             self.assertEqual(recovered["runs"][:2], prefix)
             self.assertEqual([(r["method"], r["seed"], r["best_proxy_fitness"]) for r in recovered["runs"]],
@@ -220,7 +221,7 @@ run_random_search(n_evaluations=23, seed=7, proxy_epochs=1,
                                      cwd=Path(__file__).resolve().parents[1], capture_output=True, timeout=30)
             self.assertEqual(process.returncode, 73, process.stderr.decode())
             metadata = next(Path(directory).glob("metadata_*.json"))
-            saved = json.loads(metadata.read_text())
+            saved = read_record(metadata)
             self.assertEqual(saved["status"], "running")
             self.assertEqual(saved["evaluation_count"], 3)
             calls = []

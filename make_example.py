@@ -1,13 +1,13 @@
 """Save one raw training row as a prediction request; never sample the test set."""
 import argparse
-import json
 from pathlib import Path
 from data.tabular import _raw, get_full_loaders, dataset_metadata
 from utils.persistence import atomic_json
+from utils.records import read_record
 
 
 def make_example(results_path, output):
-    source = json.loads(Path(results_path).read_text(encoding="utf-8"))
+    source = read_record(results_path)
     dataset, seed = source["dataset"]["name"], source["split_seed"]
     current = dataset_metadata(seed, dataset)
     if current["data_sha256"] != source["dataset"]["data_sha256"]:

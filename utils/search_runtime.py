@@ -12,8 +12,9 @@ import subprocess
 from uuid import uuid4
 
 from ga.chromosome import decode, SEARCH_SPACE, SCHEMA_VERSION
-from utils.persistence import atomic_json, RunLock
+from utils.persistence import RunLock
 from utils.provenance import source_fingerprint
+from utils.records import read_record, write_record
 
 RESUME_VERSION = 3
 
@@ -63,7 +64,7 @@ class SearchSession:
         self.trial_path = self.log_dir / f"trials_{self.run_id}.jsonl"
         self.metadata_path = self.log_dir / f"metadata_{self.run_id}.json"
         if self.resume:
-            saved = json.loads(self.resume.read_text(encoding="utf-8"))
+            saved = read_record(self.resume)
             self._check_resume(saved)
             self.run_id = saved["run_id"]
             self.metadata_path = self.resume
@@ -145,7 +146,7 @@ class SearchSession:
                 os.fsync(stream.fileno())
 
     def _write_metadata(self):
-        atomic_json(self.metadata_path, self.metadata)
+        write_record(self.metadata_path, self.metadata)
 
     def __enter__(self):
         self.lock = RunLock(self.metadata_path.with_suffix(".lock"))
@@ -162,7 +163,7 @@ class SearchSession:
     def _enter_locked(self):
         self.device = self.config["device"] if self.smoke or self.config.get("injected_evaluator") else resolve_device(self.config["device"])
         if self.resume:
-            saved = json.loads(self.resume.read_text(encoding="utf-8"))
+            saved = read_record(self.resume)
             self._check_resume(saved)
             current_revision = self.metadata["git_commit"]
             current_versions = self.metadata["versions"]
@@ -294,7 +295,7 @@ class SearchSession:
                   "log_path": log_path}
         path = self.save_dir / f"best_{self.run_id}.json"
         result["save_path"] = str(path)
-        atomic_json(path, result)
+        write_record(path, result)
         return result
 
     def __exit__(self, kind, error, traceback):
@@ -314,7 +315,7 @@ class SearchSession:
 def resume_search(metadata_path, evaluator=None):
     """Replay deterministic controller decisions; train only unfinished trials."""
     path = Path(metadata_path).resolve()
-    saved = json.loads(path.read_text(encoding="utf-8"))
+    saved = read_record(path)
     if saved.get("resume_version") != RESUME_VERSION:
         raise ValueError("This run predates source-verified recovery; use its original implementation")
     config = saved["config"].copy()

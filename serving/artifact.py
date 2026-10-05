@@ -13,6 +13,7 @@ from data.specs import dataset_spec
 from ga.chromosome import SCHEMA_VERSION, decode
 from models.mlp import build_model
 from utils.persistence import atomic_json, RunLock
+from utils.records import read_record
 
 
 def feature_names(dataset):
@@ -26,7 +27,7 @@ def feature_names(dataset):
 
 
 def export_artifact(results_path, destination, example_path=None):
-    source = json.loads(Path(results_path).read_text(encoding="utf-8"))
+    source = read_record(results_path)
     if source.get("schema_version") != SCHEMA_VERSION or source.get("baseline"):
         raise ValueError("Export requires a compatible searched model's full-training result")
     if source["arch"] != decode(source["chromosome"]):

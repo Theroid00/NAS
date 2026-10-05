@@ -5,6 +5,7 @@ import math
 from pathlib import Path
 import statistics
 from unittest.mock import patch
+from utils.records import read_record
 
 
 def audit(comparison_path, output_path):
@@ -14,13 +15,13 @@ def audit(comparison_path, output_path):
     from sklearn.metrics import accuracy_score, balanced_accuracy_score, confusion_matrix
     from training.evaluator import evaluate_trial, validate
 
-    manifest = json.loads(Path(comparison_path).read_text(encoding="utf-8"))
+    manifest = read_record(comparison_path)
     assert not manifest["smoke"]
     report = {"comparison": str(comparison_path), "device": torch.cuda.get_device_name(0),
               "test_set_evaluated": False, "runs": []}
     subset_hashes = set()
     for run in manifest["runs"]:
-        winner = json.loads(Path(run["winner_path"]).read_text(encoding="utf-8"))
+        winner = read_record(run["winner_path"])
         trials = [json.loads(line) for line in Path(winner["trial_path"]).read_text(encoding="utf-8").splitlines()]
         assert len(trials) == manifest["evaluation_budget"] == run["evaluation_count"]
         best = max((trial for trial in trials if trial["status"] == "ok"), key=lambda trial: trial["fitness"])
@@ -28,7 +29,7 @@ def audit(comparison_path, output_path):
         assert best["chromosome"] == winner["best_chromosome"]
         assert best["fitness"] == winner["best_fitness"] == run["best_proxy_fitness"]
         assert best["validation_loss"] == winner["best_validation_loss"] == run["best_proxy_validation_loss"]
-        metadata = json.loads(Path(winner["metadata_path"]).read_text(encoding="utf-8"))
+        metadata = read_record(winner["metadata_path"])
         protocol = metadata["proxy_protocol"]
         subset_hashes.add((protocol["train_indices_sha256"], protocol["validation_indices_sha256"]))
         independent = {}

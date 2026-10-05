@@ -5,10 +5,11 @@ from pathlib import Path
 import statistics
 
 from utils.persistence import atomic_json
+from utils.records import read_record
 
 
 def read(path):
-    return json.loads(Path(path).read_text(encoding="utf-8"))
+    return read_record(path)
 
 
 def build_report(comparison_path):

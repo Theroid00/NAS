@@ -9,6 +9,7 @@ import time
 
 from reporting.comparison import build_report, save_report
 from utils.persistence import atomic_json, RunLock
+from utils.records import read_record
 
 
 def benchmark_inference(artifact_dir, example_path, repeats=100, device="cuda"):
@@ -51,14 +52,14 @@ def finalize_comparison(comparison_path, report_path="docs/industry-results.json
     lock = RunLock(comparison_path.with_name("delivery.lock"))
     lock.acquire()
     try:
-        comparison = json.loads(comparison_path.read_text(encoding="utf-8"))
+        comparison = read_record(comparison_path)
         if comparison["status"] != "completed" or comparison["smoke"]:
             raise ValueError("Finish a real comparison suite before packaging the industry demo")
         report = build_report(comparison_path)
         selected = report["selected_model"]
         if selected is None:
             raise ValueError("Comparison needs full-trained winners before export")
-        result = json.loads(Path(selected["results_path"]).read_text(encoding="utf-8"))
+        result = read_record(selected["results_path"])
         if result["test_accuracy"] is None:
             result = evaluate_checkpoint(selected["results_path"], comparison["config"]["device"])
         example_path = comparison_path.parent / "example-request.json"

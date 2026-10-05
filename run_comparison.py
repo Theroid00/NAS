@@ -1,7 +1,6 @@
 """Repeat GA, aging evolution, and random search with identical trial budgets."""
 import argparse
 from datetime import datetime
-import json
 from pathlib import Path
 import statistics
 from uuid import uuid4
@@ -11,8 +10,9 @@ from ga.aging import run_aging_evolution
 from models.baselines.random_nas import run_random_search
 from utils.search_runtime import validate_budget
 from ga.chromosome import SCHEMA_VERSION
-from utils.persistence import atomic_json, RunLock
+from utils.persistence import RunLock
 from utils.provenance import source_fingerprint
+from utils.records import read_record, write_record
 
 
 def compare(methods, seeds, budget=300, population=20, proxy_epochs=20, device="cpu",
@@ -44,7 +44,7 @@ def compare(methods, seeds, budget=300, population=20, proxy_epochs=20, device="
     lock.acquire()
     if resume:
         try:
-            saved = json.loads(Path(resume).read_text(encoding="utf-8"))
+            saved = read_record(resume)
             if saved.get("resume_version") != 2:
                 raise ValueError("Comparison predates source-verified recovery; use its original implementation")
             if saved.get("source_fingerprint") != manifest["source_fingerprint"]:
@@ -60,7 +60,7 @@ def compare(methods, seeds, budget=300, population=20, proxy_epochs=20, device="
             lock.release()
             raise
     def save():
-        atomic_json(path, manifest)
+        write_record(path, manifest)
     try:
         save()
         for seed in seeds:
@@ -74,7 +74,7 @@ def compare(methods, seeds, budget=300, population=20, proxy_epochs=20, device="
                 row = next((r for r in manifest["runs"] if r["method"] == method and r["seed"] == seed), None)
                 saved_searches = list(directory.glob("metadata_*.json")) if resume and row is None else []
                 if row is not None:
-                    result = json.loads(Path(row["winner_path"]).read_text(encoding="utf-8"))
+                    result = read_record(row["winner_path"])
                     if result["evaluation_count"] != budget or result["best_fitness"] != row["best_proxy_fitness"]:
                         raise ValueError("Saved comparison winner is inconsistent")
                 elif saved_searches:
@@ -106,7 +106,7 @@ def compare(methods, seeds, budget=300, population=20, proxy_epochs=20, device="
                         full_run_id = f"{result['run_id']}_seed{full_seed}"
                         completed_full = directory / f"full_train_{full_run_id}.json"
                         if completed_full.exists():
-                            full = json.loads(completed_full.read_text(encoding="utf-8"))
+                            full = read_record(completed_full)
                             if (full["seed"] != full_seed or full["chromosome"] != result["best_chromosome"]
                                     or full["split_seed"] != split_seed or full["protocol"]["epochs"] != full_epochs
                                     or full["dataset"]["name"] != dataset or full["test_accuracy"] is not None):
@@ -155,7 +155,7 @@ def compare(methods, seeds, budget=300, population=20, proxy_epochs=20, device="
 
 
 def resume_comparison(path):
-    saved = json.loads(Path(path).read_text(encoding="utf-8"))
+    saved = read_record(path)
     return compare(**saved["config"], seeds=saved["search_seeds"], budget=saved["evaluation_budget"],
                    split_seed=saved["split_seed"], smoke=saved["smoke"],
                    full_seeds=saved["full_training_seeds"], dataset=saved["dataset_name"], resume=path)
