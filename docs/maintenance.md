@@ -67,7 +67,7 @@ part of the shortest run command.
 | Report regeneration | Plain report output can replace portfolio enrichment at the same default path | Separate plain/enriched outputs or preserve explicitly compatible enrichment; deferred |
 | Dashboard | No selected-model test/inference summary or uncertainty display; only first full-training repeat is inspected | Presentation polish if the user chooses to resume dashboard work; deferred |
 | Fresh-machine delivery | Core GPU package versions pinned; reusable installation/CUDA check added; see the setup guide for fresh-environment evidence | Downloadable weights release and other OS/driver validation remain optional |
-| Docker | CPU inference image has read-only model mount/readiness and Ubuntu CI smoke checks; no local engine | Record Linux CI build/runtime results; GPU image remains optional |
+| Docker | CPU inference image passed Ubuntu CI build/prediction/restart/failure checks; no local engine | GPU image remains optional; see portable delivery for verified run |
 | Source provenance | Implemented: startup relative-file hashes and aggregate digest in search/suite/full-training records; changed sources block recovery | Historical runs retain their original records and require their original recovery implementation |
 | Resume | Completed trials recover, partial epochs do not; individual format 3/suite format 2 enforce source consistency | Epoch recovery is a separate feature; older formats use the original checkout |
 | Paths | New experiment JSON uses record-relative references; copy/migration utility provided; historical records/reports remain unchanged | Keep whole referenced trees together; explicit roots required for legacy relocation |

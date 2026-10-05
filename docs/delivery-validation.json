@@ -62,9 +62,12 @@
   "bundle_gpu_prediction_parity": true,
   "local_http_smoke_passed": true,
   "docker_local_build": "not_run_engine_unavailable",
-  "linux_container_ci": "configured_not_yet_verified",
+  "linux_container_ci": "passed",
   "legacy_report_rebuild_matches": true,
   "historical_report_sha256": "8744f27d09cead324e6483755dd453c0ddaf2dc0d14175457fac5796650669ac",
   "documentation_links_and_python_syntax": "passed",
-  "public_model_upload_or_deployment": false
+  "public_model_upload_or_deployment": false,
+  "windows_cpu_ci": "passed",
+  "ci_run": "https://github.com/Theroid00/NAS/actions/runs/37350805681",
+  "ci_revision": "ca7a871074832a3d0f3159beaca0ec372d36f6eb"
 }

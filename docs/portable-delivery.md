@@ -141,10 +141,12 @@ replacement for GPU architecture search.
 
 Local limitation: Docker and usable WSL are unavailable on this host. The fixture
 and HTTP verification scripts can be tested here against the local API, but this
-does not prove Linux build/runtime compatibility. The CI job provides that check
-when run. Its status must be reported separately; configuration alone is not
-evidence that a container passed. No Docker installation or public deployment is
-performed by these scripts.
+does not prove Linux build/runtime compatibility. The remote Ubuntu Docker job
+subsequently passed image build, offline fixture generation, HTTP prediction
+parity, restart, and missing/corrupt artifact rejection. Windows CPU tests passed
+in the same [verified CI run](https://github.com/Theroid00/NAS/actions/runs/37350805681)
+at implementation commit `ca7a871`. No Docker installation or public deployment
+was performed on this machine.
 
 ## Implementation verification
 
