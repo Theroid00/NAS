@@ -123,8 +123,12 @@ python -m pip check
 
 CI installs pinned CPU and service dependencies on Windows, runs unittest, then
 a smoke comparison. It does not prove that the NVIDIA driver/CUDA path works on
-an arbitrary GPU machine. That path was checked locally. The optional Docker
-image has not been built because Docker is not installed on this development host.
+an arbitrary GPU machine. That path was checked locally. Docker was unavailable
+on the original development host, but remote Ubuntu CI subsequently passed image
+build, offline fixture generation, HTTP prediction parity, restart, and rejection
+of missing/corrupt artifacts. Windows CPU and Linux container jobs both passed
+for `f3a04c2` in [the verified CI run](https://github.com/Theroid00/NAS/actions/runs/37351509961);
+see [portable delivery](portable-delivery.md).
 
 ## Evidence boundaries
 

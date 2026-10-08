@@ -122,10 +122,12 @@ Laptop GPU with CUDA runtime 13.0. Broad `requirements.txt` is a convenience
 specification, not the verified environment lock. Driver/OS portability is not
 established by one successful host.
 
-CI defines Windows CPU tests and a synthetic smoke comparison. Local GPU checks
-do not establish that a remote Actions job passed. The optional CPU Docker image
-remains unbuilt; Linux compatibility was not verified. Python syntax and local
-documentation links passed. Environments, data cache, weights, new experiments,
+At the time of this audit, the CPU Docker image was unbuilt and Linux
+compatibility was not verified. Subsequent Windows CPU and Linux container CI
+checks passed, including image build, prediction parity, restart, and rejection
+of missing/corrupt artifacts; see [portable delivery](portable-delivery.md).
+Both jobs also passed for `f3a04c2` in [the verified CI run](https://github.com/Theroid00/NAS/actions/runs/37351509961).
+Python syntax and local documentation links passed. Environments, data cache, weights, new experiments,
 and untracked `analysis/` material are excluded from Git delivery. Historical
 CIFAR outputs remain intentionally tracked and documented as older-schema results.
 A basic credential-pattern check found no matches; this is not a formal security
